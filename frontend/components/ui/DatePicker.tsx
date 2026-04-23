@@ -24,16 +24,13 @@ export default function DatePicker({
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <button
-          type="button"
-          className={`flex h-10 w-full items-center justify-between rounded-[6px] border border-border bg-card px-3 font-inter text-[13px] transition-colors hover:border-primary focus:outline-none focus:ring-1 focus:ring-primary ${
-            value ? "text-label" : "text-placeholder"
-          } ${className}`}
-        >
-          <span>{value ? format(value, "dd/MM/yyyy") : placeholder}</span>
-          <Icon name="calendar" size={14} className="shrink-0 text-placeholder" />
-        </button>
+      <PopoverTrigger
+        className={`flex h-10 w-full items-center justify-between rounded-[6px] border border-border bg-card px-3 font-inter text-[13px] transition-colors hover:border-primary focus:outline-none focus:ring-1 focus:ring-primary ${
+          value ? "text-label" : "text-placeholder"
+        } ${className}`}
+      >
+        <span>{value ? format(value, "dd/MM/yyyy") : placeholder}</span>
+        <Icon name="calendar" size={14} className="shrink-0 text-placeholder" />
       </PopoverTrigger>
       <PopoverContent className="w-auto p-0" align="start">
         <Calendar

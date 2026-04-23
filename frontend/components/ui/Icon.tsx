@@ -26,6 +26,7 @@ const PATHS: Record<string, string> = {
   "x": `<path d="M18 6 6 18"/><path d="m6 6 12 12"/>`,
   "arrow-left": `<path d="m12 19-7-7 7-7"/><path d="M19 12H5"/>`,
   "layers": `<path d="m12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z"/><path d="m22 17.65-9.17 4.16a2 2 0 0 1-1.66 0L2 17.65"/><path d="m22 12.65-9.17 4.16a2 2 0 0 1-1.66 0L2 12.65"/>`,
+  "utensils": `<path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"/>`,
 };
 
 interface IconProps {

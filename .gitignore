@@ -41,7 +41,7 @@ artifacts/
 .cache/
 .parcel-cache/
 .turbo/
-
+.claude/
 # IDEs and Editors
 .vscode/
 .idea/
