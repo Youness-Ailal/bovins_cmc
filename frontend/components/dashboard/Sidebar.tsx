@@ -7,13 +7,12 @@ import Icon from "@/components/ui/Icon";
 
 const NAV = [
   { href: "/dashboard", icon: "layout-dashboard", label: "Tableau de bord", match: ["/dashboard"] },
-  { href: "/animaux", icon: "scan-line", label: "Animaux", match: ["/animaux"] },
-  { href: "/lots", icon: "layers", label: "Lots", match: ["/lots"] },
+  { href: "/animaux", icon: "scan-line", label: "Animaux", match: ["/animaux", "/lots"] },
   { href: "/parcelles", icon: "map-pin", label: "Parcelles", match: ["/parcelles"] },
   { href: "/stocks", icon: "package", label: "Stock", match: ["/stocks"] },
   { href: "/rations", icon: "utensils", label: "Rations", match: ["/rations"] },
   { href: "/sante", icon: "heart-pulse", label: "Santé", match: ["/sante"] },
-  { href: "/performance", icon: "chart-bar", label: "Performance", match: ["/performance"] },
+  { href: "/performance", icon: "bell", label: "Alertes", match: ["/performance"] },
   { href: "/administration", icon: "settings", label: "Administration", match: ["/administration"] },
 ];
 

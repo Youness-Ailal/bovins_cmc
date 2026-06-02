@@ -126,7 +126,7 @@ export default function FicheParcellePage({ params }: { params: Promise<{ id: st
             </FormField>
 
             <FormField label="Ration associée">
-              <Select value={ration} onValueChange={setRation}>
+              <Select value={ration} onValueChange={(v) => setRation(v ?? "")}>
                 <SelectTrigger className="h-10 w-full rounded-[8px] border border-border bg-card font-inter text-[13px] text-label focus:border-primary focus:ring-primary">
                   <SelectValue />
                 </SelectTrigger>

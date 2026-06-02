@@ -37,10 +37,10 @@ export default function ListeLotsPage() {
           <span className="font-dm-sans text-xl font-semibold text-label">Liste des lots</span>
           <span className="font-inter text-sm text-placeholder">/ Lots</span>
         </div>
-        <button className="flex items-center gap-1.5 rounded-[6px] bg-primary px-3.5 py-2 font-dm-sans text-[13px] font-semibold text-white hover:bg-primary-hover transition-colors">
+        <Link href="/lots/nouveau" className="flex items-center gap-1.5 rounded-[6px] bg-primary px-3.5 py-2 font-dm-sans text-[13px] font-semibold text-white hover:bg-primary-hover transition-colors">
           <Icon name="plus" size={14} />
           Nouveau lot
-        </button>
+        </Link>
       </header>
 
       <div className="flex flex-1 flex-col gap-4 overflow-auto p-6">
@@ -75,9 +75,9 @@ export default function ListeLotsPage() {
                 <Link href={`/lots/${lot.id}`} className="text-placeholder hover:text-subtle transition-colors">
                   <Icon name="eye" size={15} />
                 </Link>
-                <button className="text-placeholder hover:text-subtle transition-colors">
+                <Link href={`/lots/${lot.id}/modifier`} className="text-placeholder hover:text-primary transition-colors">
                   <Icon name="pencil" size={15} />
-                </button>
+                </Link>
               </div>
             </div>
           ))}

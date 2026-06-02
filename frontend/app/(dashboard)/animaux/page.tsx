@@ -87,16 +87,40 @@ const COLUMNS: Column<Animal>[] = [
   },
 ];
 
-const DROPDOWNS = ["Race", "Phase", "Parcelle", "Lot", "État santé"];
+const FILTER_OPTIONS: Record<string, string[]> = {
+  Race: ["Toutes", "Holstein", "Angus", "Limousin", "Charolais"],
+  Phase: ["Toutes", "Croissance", "Engraissement", "Finition"],
+  Parcelle: ["Toutes", "P-01", "P-02"],
+  Lot: ["Tous", "LOT-A", "LOT-B"],
+  "État santé": ["Tous", "Sain", "Malade"],
+};
 
 export default function ListeAnimauxPage() {
   const [search, setSearch] = useState("");
+  const [filters, setFilters] = useState<Record<string, string>>({});
+  const [openFilter, setOpenFilter] = useState<string | null>(null);
+  const [pretsOnly, setPretsOnly] = useState(false);
 
-  const filtered = ANIMALS.filter(
-    (a) =>
-      a.id.toLowerCase().includes(search.toLowerCase()) ||
-      a.race.toLowerCase().includes(search.toLowerCase())
-  );
+  function setFilter(key: string, value: string) {
+    setFilters((prev) => {
+      const next = { ...prev };
+      if (value === "Toutes" || value === "Tous") delete next[key];
+      else next[key] = value;
+      return next;
+    });
+    setOpenFilter(null);
+  }
+
+  const filtered = ANIMALS.filter((a) => {
+    if (search && !a.id.toLowerCase().includes(search.toLowerCase()) && !a.race.toLowerCase().includes(search.toLowerCase())) return false;
+    if (filters["Race"] && a.race !== filters["Race"]) return false;
+    if (filters["Phase"] && a.phase !== filters["Phase"]) return false;
+    if (filters["Parcelle"] && a.parcelle !== filters["Parcelle"]) return false;
+    if (filters["Lot"] && a.lot !== filters["Lot"]) return false;
+    if (filters["État santé"] && a.sante !== filters["État santé"]) return false;
+    if (pretsOnly && a.phase !== "Finition") return false;
+    return true;
+  });
 
   return (
     <div className="flex flex-1 flex-col overflow-hidden bg-surface">
@@ -116,14 +140,33 @@ export default function ListeAnimauxPage() {
 
       <div className="flex flex-1 flex-col gap-4 overflow-auto p-6">
         <div className="flex flex-wrap items-center gap-2 rounded-[8px] border border-border-light bg-card p-3">
-          {DROPDOWNS.map((d) => (
-            <button
-              key={d}
-              className="flex items-center gap-1 rounded-[6px] border border-border-light px-2.5 py-1.5 font-inter text-[13px] text-subtle hover:bg-surface transition-colors"
-            >
-              {d}
-              <Icon name="chevron-down" size={12} className="text-placeholder" />
-            </button>
+          {Object.keys(FILTER_OPTIONS).map((key) => (
+            <div key={key} className="relative">
+              <button
+                onClick={() => setOpenFilter(openFilter === key ? null : key)}
+                className={`flex items-center gap-1 rounded-[6px] border px-2.5 py-1.5 font-inter text-[13px] transition-colors ${
+                  filters[key]
+                    ? "border-primary bg-primary-light font-medium text-primary"
+                    : "border-border-light text-subtle hover:bg-surface"
+                }`}
+              >
+                {filters[key] ? `${key}: ${filters[key]}` : key}
+                <Icon name="chevron-down" size={12} className="text-placeholder" />
+              </button>
+              {openFilter === key && (
+                <div className="absolute top-full left-0 z-10 mt-1 min-w-[140px] overflow-hidden rounded-[8px] border border-border-light bg-card shadow-md">
+                  {FILTER_OPTIONS[key].map((opt) => (
+                    <button
+                      key={opt}
+                      onClick={() => setFilter(key, opt)}
+                      className="flex w-full items-center px-3 py-2 font-inter text-[13px] text-label hover:bg-surface transition-colors"
+                    >
+                      {opt}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           ))}
           <div className="flex items-center gap-1.5 rounded-[6px] border border-border-light bg-surface px-3 py-1.5">
             <Icon name="search" size={14} className="text-placeholder" />
@@ -135,10 +178,18 @@ export default function ListeAnimauxPage() {
               className="w-44 bg-transparent font-inter text-[13px] text-label placeholder:text-placeholder focus:outline-none"
             />
           </div>
-          <span className="flex items-center gap-1.5 rounded-full bg-[#E8F5E9] px-3 py-1.5 font-inter text-xs font-medium text-primary">
+          <button
+            onClick={() => setPretsOnly((v) => !v)}
+            className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 font-inter text-xs font-medium transition-colors ${
+              pretsOnly ? "bg-primary text-white" : "bg-primary-light text-primary hover:bg-primary hover:text-white"
+            }`}
+          >
             <Icon name="check" size={12} />
             Prêts à vendre
-          </span>
+          </button>
+          <Link href="/animaux/prets-a-vendre" className="ml-auto font-inter text-[12px] text-primary hover:underline">
+            Vue dédiée →
+          </Link>
         </div>
 
         <DataTable

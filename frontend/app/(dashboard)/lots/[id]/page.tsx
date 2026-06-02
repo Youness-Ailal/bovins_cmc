@@ -25,14 +25,16 @@ export default async function FicheLotPage({ params }: { params: Promise<{ id: s
   return (
     <div className="flex flex-1 flex-col overflow-hidden bg-surface">
       <header className="flex h-16 shrink-0 items-center justify-between border-b border-border-light bg-card px-7">
-        <div className="flex items-center gap-2">
-          <span className="font-dm-sans text-[22px] font-bold text-label">{id}</span>
-          <span className="font-inter text-sm text-placeholder">/ Lots</span>
+        <div className="flex items-center gap-1.5">
+          <Link href="/lots" className="font-inter text-sm text-placeholder hover:text-subtle transition-colors">Lots</Link>
+          <span className="font-inter text-sm text-placeholder">/</span>
+          <span className="font-dm-sans text-xl font-semibold text-label">Fiche lot</span>
+          <span className="font-inter text-sm text-placeholder">/ {id}</span>
         </div>
-        <button className="flex items-center gap-1.5 rounded-[6px] border border-border-light bg-surface px-3.5 py-2 font-dm-sans text-[13px] font-semibold text-subtle hover:bg-border-light transition-colors">
+        <Link href={`/lots/${id}/modifier`} className="flex items-center gap-1.5 rounded-[6px] border border-border-light bg-surface px-3.5 py-2 font-dm-sans text-[13px] font-semibold text-subtle hover:bg-border-light transition-colors">
           <Icon name="pencil" size={14} />
           Modifier
-        </button>
+        </Link>
       </header>
 
       <div className="flex shrink-0 border-b border-border-light bg-card">
@@ -50,7 +52,7 @@ export default async function FicheLotPage({ params }: { params: Promise<{ id: s
               <span className="w-[130px] shrink-0 font-dm-sans text-[11px] font-semibold text-placeholder">Identifiant</span>
               <span className="w-[110px] shrink-0 font-dm-sans text-[11px] font-semibold text-placeholder">Race</span>
               <span className="w-[120px] shrink-0 font-dm-sans text-[11px] font-semibold text-placeholder">Phase</span>
-              <span className="git add .w-[120px] shrink-0 font-dm-sans text-[11px] font-semibold text-placeholder">État santé</span>
+              <span className="w-[120px] shrink-0 font-dm-sans text-[11px] font-semibold text-placeholder">État santé</span>
               <span className="w-[90px] shrink-0 font-dm-sans text-[11px] font-semibold text-placeholder">GMQ</span>
               <span className="flex-1 font-dm-sans text-[11px] font-semibold text-placeholder">Actions</span>
             </div>
@@ -83,32 +85,32 @@ export default async function FicheLotPage({ params }: { params: Promise<{ id: s
         <div className="flex w-[280px] shrink-0 flex-col gap-3">
           <span className="font-dm-sans text-sm font-semibold text-label">Alertes du groupe</span>
 
-          <div className="flex flex-col gap-2 rounded-[8px] border border-[#C5A8A0] bg-[#E5DCDA] p-3">
+          <div className="flex flex-col gap-2 rounded-[8px] border border-danger/30 bg-danger/5 p-3">
             <div className="flex items-center gap-1.5">
-              <Icon name="triangle-alert" size={14} className="shrink-0 text-[#8C1C00]" />
-              <span className="font-dm-sans text-xs font-semibold text-[#8C1C00]">ANI-003 — Santé critique</span>
+              <Icon name="triangle-alert" size={14} className="shrink-0 text-danger" />
+              <span className="font-dm-sans text-xs font-semibold text-danger">ANI-003 — Santé critique</span>
             </div>
-            <p className="font-inter text-[11px] leading-relaxed text-[#8C1C00]">
+            <p className="font-inter text-[11px] leading-relaxed text-danger/80">
               Cet animal est marqué malade. Consulter un vétérinaire.
             </p>
           </div>
 
-          <div className="flex flex-col gap-2 rounded-[8px] border border-[#C9B896] bg-[#E9E3D8] p-3">
+          <div className="flex flex-col gap-2 rounded-[8px] border border-warning/30 bg-warning/5 p-3">
             <div className="flex items-center gap-1.5">
-              <Icon name="trending-down" size={14} className="shrink-0 text-[#804200]" />
-              <span className="font-dm-sans text-xs font-semibold text-[#804200]">GMQ en baisse ce mois</span>
+              <Icon name="trending-down" size={14} className="shrink-0 text-warning" />
+              <span className="font-dm-sans text-xs font-semibold text-warning">GMQ en baisse ce mois</span>
             </div>
-            <p className="font-inter text-[11px] leading-relaxed text-[#804200]">
+            <p className="font-inter text-[11px] leading-relaxed text-warning/80">
               Le GMQ moyen du lot a chuté de 12% par rapport au mois précédent.
             </p>
           </div>
 
-          <div className="flex flex-col gap-2 rounded-[8px] border border-[#B4B4CC] bg-[#DFDFE6] p-3">
+          <div className="flex flex-col gap-2 rounded-[8px] border border-info/30 bg-info/5 p-3">
             <div className="flex items-center gap-1.5">
-              <Icon name="syringe" size={14} className="shrink-0 text-[#000066]" />
-              <span className="font-dm-sans text-xs font-semibold text-[#000066]">Vaccination à prévoir</span>
+              <Icon name="syringe" size={14} className="shrink-0 text-info" />
+              <span className="font-dm-sans text-xs font-semibold text-info">Vaccination à prévoir</span>
             </div>
-            <p className="font-inter text-[11px] leading-relaxed text-[#000066]">
+            <p className="font-inter text-[11px] leading-relaxed text-info/80">
               Rappel : vaccin bovin prévu dans 7 jours pour 5 animaux.
             </p>
           </div>
