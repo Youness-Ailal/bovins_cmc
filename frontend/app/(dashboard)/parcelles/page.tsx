@@ -84,12 +84,9 @@ export default function ListeParcellesPage() {
               </div>
               <span className="flex-1 font-inter text-sm text-subtle">{p.ration}</span>
               <div className="flex w-[51px] shrink-0 items-center gap-3">
-                <Link href={`/parcelles/${p.id}`} className="text-placeholder hover:text-subtle transition-colors">
+                <Link href={`/parcelles/${p.id}`} className="text-placeholder hover:text-primary transition-colors">
                   <Icon name="eye" size={15} />
                 </Link>
-                <button className="text-placeholder hover:text-subtle transition-colors">
-                  <Icon name="pencil" size={15} />
-                </button>
               </div>
             </div>
           ))}

@@ -42,12 +42,18 @@ const COLUMNS: Column<Ration>[] = [
   {
     key: "_actions",
     label: "Actions",
-    width: "w-[80px]",
+    width: "w-[160px]",
     align: "right",
     render: (r) => (
-      <div className="flex items-center gap-3">
+      <div className="flex items-center justify-end gap-2">
+        <Link
+          href={`/rations/distribution?ration=${r.id}`}
+          className="flex items-center gap-1 rounded-[6px] bg-primary-light px-2.5 py-1.5 font-inter text-[12px] font-semibold text-primary hover:bg-primary hover:text-white transition-colors"
+        >
+          <Icon name="utensils" size={13} />
+          Distribuer
+        </Link>
         <Link href={`/rations/${r.id}`} className="text-placeholder hover:text-primary transition-colors"><Icon name="eye" size={15} /></Link>
-        <button className="text-placeholder hover:text-primary transition-colors"><Icon name="pencil" size={15} /></button>
       </div>
     ),
   },

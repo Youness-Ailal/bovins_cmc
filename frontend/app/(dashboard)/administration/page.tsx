@@ -5,6 +5,7 @@ import Link from "next/link";
 import Icon from "@/components/ui/Icon";
 import DataTable, { Column } from "@/components/ui/DataTable";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
+import AdminTabs from "@/components/dashboard/AdminTabs";
 import { useToast } from "@/components/ui/Toast";
 import { userRoleStyle } from "@/lib/statusStyles";
 
@@ -26,11 +27,8 @@ const INITIAL_UTILISATEURS: Utilisateur[] = [
 
 const ROLE_STYLE = userRoleStyle;
 
-const TABS = ["Utilisateurs", "Races", "Alertes", "Paramètres"];
-
 export default function AdministrationPage() {
   const { success } = useToast();
-  const [activeTab, setActiveTab] = useState(0);
   const [utilisateurs, setUtilisateurs] = useState<Utilisateur[]>(INITIAL_UTILISATEURS);
   const [toDelete, setToDelete] = useState<Utilisateur | null>(null);
 
@@ -77,66 +75,18 @@ export default function AdministrationPage() {
       <header className="flex h-16 shrink-0 items-center justify-between border-b border-border-light bg-card px-7">
         <div className="flex items-center gap-1.5">
           <span className="font-dm-sans text-xl font-semibold text-label">Administration</span>
-          <span className="font-inter text-sm text-placeholder">/ Gestion système</span>
+          <span className="font-inter text-sm text-placeholder">/ Utilisateurs</span>
         </div>
-        {activeTab === 0 && (
-          <Link href="/administration/utilisateurs/nouveau" className="flex items-center gap-1.5 rounded-[6px] bg-primary px-3.5 py-2 font-dm-sans text-[13px] font-semibold text-white hover:bg-primary-hover transition-colors">
-            <Icon name="plus" size={14} />
-            Nouvel utilisateur
-          </Link>
-        )}
-        {activeTab === 1 && (
-          <Link href="/administration/races/nouveau" className="flex items-center gap-1.5 rounded-[6px] bg-primary px-3.5 py-2 font-dm-sans text-[13px] font-semibold text-white hover:bg-primary-hover transition-colors">
-            <Icon name="plus" size={14} />
-            Nouvelle race
-          </Link>
-        )}
+        <Link href="/administration/utilisateurs/nouveau" className="flex items-center gap-1.5 rounded-[6px] bg-primary px-3.5 py-2 font-dm-sans text-[13px] font-semibold text-white hover:bg-primary-hover transition-colors">
+          <Icon name="plus" size={14} />
+          Nouvel utilisateur
+        </Link>
       </header>
 
-      {/* Tabs */}
-      <div className="flex h-12 shrink-0 items-center border-b border-border-light bg-card px-6">
-        {TABS.map((tab, i) => (
-          <button
-            key={tab}
-            onClick={() => setActiveTab(i)}
-            className={`flex h-12 items-center px-4 font-inter text-sm transition-colors ${i === activeTab ? "border-b-2 border-primary font-semibold text-primary" : "font-normal text-placeholder hover:text-subtle"}`}
-          >
-            {tab}
-          </button>
-        ))}
-      </div>
+      <AdminTabs />
 
       <div className="flex flex-1 flex-col gap-4 overflow-auto p-6">
-        {activeTab === 0 && (
-          <DataTable columns={COLUMNS} data={utilisateurs} keyExtractor={(u) => u.id} pagination={{ page: 1, total: 1, count: utilisateurs.length }} />
-        )}
-        {activeTab === 1 && (
-          <div className="flex items-center justify-center flex-1 text-placeholder font-inter text-sm">
-            <div className="flex flex-col items-center gap-3">
-              <Icon name="settings" size={32} className="text-border-light" />
-              <span>Configuration des races bovines</span>
-              <Link href="/administration/races" className="font-inter text-sm text-primary hover:underline">Gérer les races →</Link>
-            </div>
-          </div>
-        )}
-        {activeTab === 2 && (
-          <div className="flex items-center justify-center flex-1 text-placeholder font-inter text-sm">
-            <div className="flex flex-col items-center gap-3">
-              <Icon name="triangle-alert" size={32} className="text-border-light" />
-              <span>Configuration des alertes automatiques</span>
-              <Link href="/administration/alertes" className="font-inter text-sm text-primary hover:underline">Gérer les alertes →</Link>
-            </div>
-          </div>
-        )}
-        {activeTab === 3 && (
-          <div className="flex items-center justify-center flex-1 text-placeholder font-inter text-sm">
-            <div className="flex flex-col items-center gap-3">
-              <Icon name="settings" size={32} className="text-border-light" />
-              <span>Paramètres généraux de la ferme</span>
-              <Link href="/administration/parametres" className="font-inter text-sm text-primary hover:underline">Accéder aux paramètres →</Link>
-            </div>
-          </div>
-        )}
+        <DataTable columns={COLUMNS} data={utilisateurs} keyExtractor={(u) => u.id} pagination={{ page: 1, total: 1, count: utilisateurs.length }} />
       </div>
 
       <ConfirmDialog

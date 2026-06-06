@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import Icon from "@/components/ui/Icon";
+import AdminTabs from "@/components/dashboard/AdminTabs";
 
 interface ConfigAlerte {
   id: string;
@@ -40,14 +40,16 @@ export default function AlertesConfigPage() {
     <div className="flex flex-1 flex-col overflow-hidden bg-surface">
       <header className="flex h-16 shrink-0 items-center justify-between border-b border-border-light bg-card px-7">
         <div className="flex items-center gap-1.5">
-          <span className="font-dm-sans text-xl font-semibold text-label">Configuration des alertes</span>
-          <span className="font-inter text-sm text-placeholder">/ Administration</span>
+          <span className="font-dm-sans text-xl font-semibold text-label">Administration</span>
+          <span className="font-inter text-sm text-placeholder">/ Alertes</span>
         </div>
         <button className="flex items-center gap-1.5 rounded-[6px] bg-primary px-3.5 py-2 font-dm-sans text-[13px] font-semibold text-white hover:bg-primary-hover transition-colors">
           <Icon name="save" size={14} />
           Enregistrer
         </button>
       </header>
+
+      <AdminTabs />
 
       <div className="flex flex-1 flex-col gap-4 overflow-auto p-6">
         <div className="overflow-hidden rounded-[10px] border border-border-light bg-card">

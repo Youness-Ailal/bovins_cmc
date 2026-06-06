@@ -5,6 +5,7 @@ import Link from "next/link";
 import Icon from "@/components/ui/Icon";
 import DataTable, { Column } from "@/components/ui/DataTable";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
+import AdminTabs from "@/components/dashboard/AdminTabs";
 import { useToast } from "@/components/ui/Toast";
 
 interface Race {
@@ -67,15 +68,16 @@ export default function RacesPage() {
     <div className="flex flex-1 flex-col overflow-hidden bg-surface">
       <header className="flex h-16 shrink-0 items-center justify-between border-b border-border-light bg-card px-7">
         <div className="flex items-center gap-1.5">
-          <Link href="/administration" className="font-inter text-sm text-placeholder hover:text-subtle transition-colors">Administration</Link>
-          <span className="font-inter text-sm text-placeholder">/</span>
-          <span className="font-dm-sans text-xl font-semibold text-label">Races bovines</span>
+          <span className="font-dm-sans text-xl font-semibold text-label">Administration</span>
+          <span className="font-inter text-sm text-placeholder">/ Races</span>
         </div>
         <Link href="/administration/races/nouveau" className="flex items-center gap-1.5 rounded-[6px] bg-primary px-3.5 py-2 font-dm-sans text-[13px] font-semibold text-white hover:bg-primary-hover transition-colors">
           <Icon name="plus" size={14} />
           Nouvelle race
         </Link>
       </header>
+
+      <AdminTabs />
 
       <div className="flex flex-1 flex-col gap-4 overflow-auto p-6">
         <DataTable
