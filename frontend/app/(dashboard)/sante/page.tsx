@@ -6,55 +6,40 @@ import Icon from "@/components/ui/Icon";
 import DataTable, { Column } from "@/components/ui/DataTable";
 import SanteTabs from "@/components/dashboard/SanteTabs";
 import { traitementStatutStyle } from "@/lib/statusStyles";
+import { useApi } from "@/lib/useApi";
+import type { Traitement } from "@/lib/types";
 
-interface Traitement {
-  id: string;
-  animal: string;
-  race: string;
-  type: string;
-  produit: string;
-  dateDebut: string;
-  dateFin: string;
-  statut: "En cours" | "Terminé" | "Planifié";
+function animalCode(t: Traitement): string {
+  return typeof t.animal === "object" ? (t.animal.identifiant ?? "—") : t.animal;
+}
+function raceName(t: Traitement): string {
+  return typeof t.animal === "object" && t.animal.race ? (t.animal.race.nom ?? "") : "";
 }
 
-const TRAITEMENTS: Traitement[] = [
-  { id: "VET-001", animal: "ANI-012", race: "Holstein", type: "Antibiotique", produit: "Amoxicilline", dateDebut: "01/06/2026", dateFin: "07/06/2026", statut: "En cours" },
-  { id: "VET-002", animal: "ANI-031", race: "Angus", type: "Antiparasitaire", produit: "Ivermectine", dateDebut: "28/05/2026", dateFin: "01/06/2026", statut: "Terminé" },
-  { id: "VET-003", animal: "ANI-047", race: "Limousin", type: "Anti-inflammatoire", produit: "Méloxicam", dateDebut: "02/06/2026", dateFin: "05/06/2026", statut: "En cours" },
-  { id: "VET-004", animal: "ANI-008", race: "Charolais", type: "Vaccin", produit: "FMD Vaccine", dateDebut: "10/06/2026", dateFin: "10/06/2026", statut: "Planifié" },
-];
-
 const COLUMNS: Column<Traitement>[] = [
-  { key: "id", label: "Réf.", width: "w-[100px]", render: (r) => <span className="font-inter text-[13px] font-semibold text-label">{r.id}</span> },
   {
-    key: "animal", label: "Animal", width: "w-[120px]",
+    key: "animal", label: "Animal", width: "w-[140px]",
     render: (r) => (
       <div className="flex flex-col">
-        <Link href={`/animaux/${r.animal}`} className="font-inter text-[13px] font-semibold text-primary hover:underline">{r.animal}</Link>
-        <span className="font-inter text-[11px] text-placeholder">{r.race}</span>
+        <span className="font-inter text-[13px] font-semibold text-primary">{animalCode(r)}</span>
+        <span className="font-inter text-[11px] text-placeholder">{raceName(r)}</span>
       </div>
     ),
   },
-  { key: "type", label: "Type", width: "w-[140px]" },
+  { key: "type", label: "Type", width: "w-[150px]" },
   { key: "produit", label: "Produit", width: "w-[150px]" },
-  { key: "dateDebut", label: "Début", width: "w-[100px]" },
-  { key: "dateFin", label: "Fin", width: "w-[100px]" },
+  { key: "dateDebut", label: "Début", width: "w-[100px]", render: (r) => <span className="font-inter text-[13px] text-subtle">{new Date(r.dateDebut).toLocaleDateString("fr-FR")}</span> },
+  { key: "dateFin", label: "Fin", width: "w-[100px]", render: (r) => <span className="font-inter text-[13px] text-subtle">{r.dateFin ? new Date(r.dateFin).toLocaleDateString("fr-FR") : "—"}</span> },
   {
     key: "statut", label: "Statut", width: "w-[110px]",
     render: (r) => <span className={`inline-flex rounded-full px-2.5 py-1 font-inter text-[11px] font-semibold ${traitementStatutStyle[r.statut]}`}>{r.statut}</span>,
   },
-  {
-    key: "_actions", label: "Actions", width: "w-[70px]", align: "right",
-    render: (r) => (
-      <Link href={`/animaux/${r.animal}`} className="flex justify-end text-placeholder hover:text-primary transition-colors"><Icon name="eye" size={15} /></Link>
-    ),
-  },
 ];
 
 export default function SantePage() {
+  const { data: traitements, loading, error } = useApi<Traitement[]>("/sante/traitements");
   const [search, setSearch] = useState("");
-  const filtered = TRAITEMENTS.filter((t) => t.animal.toLowerCase().includes(search.toLowerCase()) || t.produit.toLowerCase().includes(search.toLowerCase()));
+  const filtered = (traitements ?? []).filter((t) => animalCode(t).toLowerCase().includes(search.toLowerCase()) || t.produit.toLowerCase().includes(search.toLowerCase()));
 
   return (
     <div className="flex flex-1 flex-col overflow-hidden bg-surface">
@@ -83,13 +68,12 @@ export default function SantePage() {
             <Icon name="search" size={14} className="text-placeholder" />
             <input type="text" placeholder="Animal ou produit…" value={search} onChange={(e) => setSearch(e.target.value)} className="w-44 bg-transparent font-inter text-[13px] text-label placeholder:text-placeholder focus:outline-none" />
           </div>
-          {["Type", "Statut"].map((f) => (
-            <button key={f} className="flex items-center gap-1 rounded-[6px] border border-border-light px-2.5 py-1.5 font-inter text-[13px] text-subtle hover:bg-surface transition-colors">
-              {f}<Icon name="chevron-down" size={12} className="text-placeholder" />
-            </button>
-          ))}
         </div>
-        <DataTable columns={COLUMNS} data={filtered} keyExtractor={(t) => t.id} pagination={{ page: 1, total: 1, count: TRAITEMENTS.length }} />
+        {loading && <p className="font-inter text-sm text-placeholder">Chargement…</p>}
+        {error && <p className="font-inter text-sm text-danger">{error}</p>}
+        {!loading && !error && (
+          <DataTable columns={COLUMNS} data={filtered} keyExtractor={(t) => t.id} pagination={{ page: 1, total: 1, count: (traitements ?? []).length }} />
+        )}
       </div>
     </div>
   );

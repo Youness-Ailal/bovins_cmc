@@ -4,45 +4,52 @@ import { use, useState } from "react";
 import Link from "next/link";
 import Icon from "@/components/ui/Icon";
 import { useSaveToast } from "@/lib/useSaveToast";
+import { useToast } from "@/components/ui/Toast";
+import { useApi } from "@/lib/useApi";
+import { api } from "@/lib/api";
 import DatePicker from "@/components/ui/DatePicker";
+import type { Animal } from "@/lib/types";
 
-// UC-02 — Enregistrer une pesée
-// Le système calcule automatiquement le GMQ depuis la pesée précédente.
-// TODO: POST /api/animaux/:id/pesees
-
-const DERNIERES_PESEES = [
-  { date: "15/05/2026", poids: 320 },
-  { date: "01/05/2026", poids: 296 },
-];
+// UC-02 — Enregistrer une pesée. Le GMQ est recalculé côté serveur.
 
 function calcGMQ(poidsActuel: number, poidsPrecedent: number, jours: number): string {
   if (jours <= 0 || poidsActuel <= poidsPrecedent) return "—";
   return ((poidsActuel - poidsPrecedent) / jours).toFixed(3);
 }
 
-function daysBetween(d1: Date, d2: string): number {
-  const parts = d2.split("/");
-  const prev = new Date(`${parts[2]}-${parts[1]}-${parts[0]}`);
-  return Math.round((d1.getTime() - prev.getTime()) / 86400000);
+function daysBetween(d1: Date, d2: string | Date): number {
+  const prev = new Date(d2);
+  return Math.max(1, Math.round((d1.getTime() - prev.getTime()) / 86400000));
 }
 
 export default function NouvellePageSee({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
+  const { data: animal } = useApi<Animal>(`/animaux/${id}`);
   const [date, setDate] = useState<Date | undefined>(new Date());
   const [poids, setPoids] = useState<string>("");
+  const [observateur, setObservateur] = useState("");
+  const [notes, setNotes] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const { error: toastError } = useToast();
+  const notifySaved = useSaveToast();
 
-  const derniere = DERNIERES_PESEES[0];
+  const derniere = (animal?.pesees ?? [])[0];
   const gmqCalc =
-    poids && date
+    poids && date && derniere
       ? calcGMQ(parseFloat(poids), derniere.poids, daysBetween(date, derniere.date))
       : null;
 
-  const notifySaved = useSaveToast();
-
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    // TODO: POST /api/animaux/:id/pesees { date, poids, gmq: gmqCalc }
-    notifySaved("Pesée enregistrée — GMQ recalculé", `/animaux/${id}`);
+    if (!poids) return toastError("Le poids est requis");
+    setSubmitting(true);
+    try {
+      await api.post(`/animaux/${id}/pesees`, { poids: Number(poids), date: date ?? new Date(), observateur, notes });
+      notifySaved("Pesée enregistrée — GMQ recalculé", `/animaux/${id}`);
+    } catch (err) {
+      toastError(err instanceof Error ? err.message : "Erreur");
+      setSubmitting(false);
+    }
   }
 
   return (
@@ -75,8 +82,10 @@ export default function NouvellePageSee({ params }: { params: Promise<{ id: stri
                 {id.slice(-1).toUpperCase()}
               </div>
               <div className="flex flex-col gap-0.5">
-                <span className="font-dm-sans text-sm font-semibold text-label">{id} — Holstein · Mâle</span>
-                <span className="font-inter text-[12px] text-subtle">Dernière pesée : {derniere.date} · {derniere.poids} kg</span>
+                <span className="font-dm-sans text-sm font-semibold text-label">{animal?.identifiant ?? id} — {animal?.race?.nom ?? ""}</span>
+                <span className="font-inter text-[12px] text-subtle">
+                  {derniere ? `Dernière pesée : ${new Date(derniere.date).toLocaleDateString("fr-FR")} · ${derniere.poids} kg` : "Aucune pesée précédente"}
+                </span>
               </div>
             </div>
           </div>
@@ -123,13 +132,13 @@ export default function NouvellePageSee({ params }: { params: Promise<{ id: stri
                   <div className="flex flex-col gap-0.5">
                     <span className="font-inter text-[11px] text-placeholder">Gain depuis dernière pesée</span>
                     <span className="font-inter text-[13px] font-medium text-label">
-                      {poids ? `+${(parseFloat(poids) - derniere.poids).toFixed(1)} kg` : "—"}
+                      {poids && derniere ? `+${(parseFloat(poids) - derniere.poids).toFixed(1)} kg` : "—"}
                     </span>
                   </div>
                   <div className="flex flex-col gap-0.5">
                     <span className="font-inter text-[11px] text-placeholder">Intervalle</span>
                     <span className="font-inter text-[13px] font-medium text-label">
-                      {date ? `${daysBetween(date, derniere.date)} jours` : "—"}
+                      {date && derniere ? `${daysBetween(date, derniere.date)} jours` : "—"}
                     </span>
                   </div>
                 </div>
@@ -143,12 +152,12 @@ export default function NouvellePageSee({ params }: { params: Promise<{ id: stri
 
               <div className="flex flex-col gap-1.5">
                 <label className="font-inter text-xs font-medium text-label">Observateur</label>
-                <input type="text" name="observateur" placeholder="Nom de la personne ayant réalisé la pesée" className="h-10 w-full rounded-[6px] border border-border bg-card px-3 font-inter text-[13px] text-label placeholder:text-placeholder focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary" />
+                <input type="text" value={observateur} onChange={(e) => setObservateur(e.target.value)} placeholder="Nom de la personne ayant réalisé la pesée" className="h-10 w-full rounded-[6px] border border-border bg-card px-3 font-inter text-[13px] text-label placeholder:text-placeholder focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary" />
               </div>
 
               <div className="flex flex-col gap-1.5">
                 <label className="font-inter text-xs font-medium text-label">Notes</label>
-                <textarea name="notes" rows={2} className="w-full resize-none rounded-[6px] border border-border bg-card p-3 font-inter text-[13px] text-label placeholder:text-placeholder focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary" placeholder="Conditions de pesée, observations…" />
+                <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} className="w-full resize-none rounded-[6px] border border-border bg-card p-3 font-inter text-[13px] text-label placeholder:text-placeholder focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary" placeholder="Conditions de pesée, observations…" />
               </div>
             </div>
 
@@ -156,12 +165,13 @@ export default function NouvellePageSee({ params }: { params: Promise<{ id: stri
             <div className="mt-5 border-t border-border-light pt-4">
               <span className="font-inter text-[11px] font-semibold uppercase tracking-wide text-placeholder">Historique récent</span>
               <div className="mt-2 flex flex-col gap-1.5">
-                {DERNIERES_PESEES.map((p) => (
-                  <div key={p.date} className="flex items-center justify-between">
-                    <span className="font-inter text-[12px] text-subtle">{p.date}</span>
+                {(animal?.pesees ?? []).slice(0, 3).map((p) => (
+                  <div key={p.id} className="flex items-center justify-between">
+                    <span className="font-inter text-[12px] text-subtle">{new Date(p.date).toLocaleDateString("fr-FR")}</span>
                     <span className="font-inter text-[12px] font-semibold text-label">{p.poids} kg</span>
                   </div>
                 ))}
+                {(animal?.pesees ?? []).length === 0 && <span className="font-inter text-[12px] text-placeholder">Aucune pesée enregistrée</span>}
               </div>
             </div>
 

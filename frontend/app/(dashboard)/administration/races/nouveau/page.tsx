@@ -1,8 +1,11 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import Icon from "@/components/ui/Icon";
 import { useSaveToast } from "@/lib/useSaveToast";
+import { useToast } from "@/components/ui/Toast";
+import { api } from "@/lib/api";
 
 function FormField({ label, children, hint }: { label: string; children: React.ReactNode; hint?: string }) {
   return (
@@ -18,11 +21,31 @@ const inputCls = "h-10 w-full rounded-[6px] border border-border bg-card px-3 fo
 
 export default function NouvelleRacePage() {
   const notifySaved = useSaveToast();
+  const { error: toastError } = useToast();
+  const [submitting, setSubmitting] = useState(false);
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    // TODO: POST /api/races
-    notifySaved("Race créée avec succès", "/administration/races");
+    const fd = new FormData(e.currentTarget as HTMLFormElement);
+    const nom = String(fd.get("nom") || "").trim();
+    if (!nom) return toastError("Le nom de la race est requis");
+    setSubmitting(true);
+    try {
+      await api.post("/races", {
+        nom,
+        origine: String(fd.get("origine") || ""),
+        poidsAdulte: Number(fd.get("poidsAdulte")) || 0,
+        gmqCible: Number(fd.get("gmqCible")) || 0,
+        icCible: Number(fd.get("ic")) || 0,
+        dureeEngraissement: Number(fd.get("dureeEngraissement")) || 0,
+        poidsAbattage: Number(fd.get("poidsAbattage")) || 0,
+        description: String(fd.get("description") || ""),
+      });
+      notifySaved("Race créée avec succès", "/administration/races");
+    } catch (err) {
+      toastError(err instanceof Error ? err.message : "Erreur");
+      setSubmitting(false);
+    }
   }
 
   return (

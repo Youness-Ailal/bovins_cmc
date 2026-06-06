@@ -4,7 +4,11 @@ import { useState } from "react";
 import Link from "next/link";
 import Icon from "@/components/ui/Icon";
 import { useSaveToast } from "@/lib/useSaveToast";
+import { useToast } from "@/components/ui/Toast";
+import { useApi } from "@/lib/useApi";
+import { api } from "@/lib/api";
 import DatePicker from "@/components/ui/DatePicker";
+import type { Animal, Parcelle } from "@/lib/types";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
@@ -23,15 +27,29 @@ const inputCls = "h-10 w-full rounded-[6px] border border-border bg-card px-3 fo
 type TransfertType = "individuel" | "lot";
 
 export default function TransfertParcellesPage() {
+  const { data: animaux } = useApi<Animal[]>("/animaux");
+  const { data: parcelles } = useApi<Parcelle[]>("/parcelles");
   const [date, setDate] = useState<Date | undefined>(new Date());
   const [type, setType] = useState<TransfertType>("individuel");
+  const [cibleId, setCibleId] = useState("");
+  const [parcelleDestId, setParcelleDestId] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
   const notifySaved = useSaveToast();
+  const { error: toastError } = useToast();
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    // TODO: POST /api/parcelles/transfert
-    notifySaved("Transfert effectué avec succès", "/parcelles");
+    if (type !== "individuel") return toastError("Le transfert par lot sera disponible prochainement — sélectionnez un animal");
+    if (!cibleId || !parcelleDestId) return toastError("Animal et parcelle de destination requis");
+    setSubmitting(true);
+    try {
+      await api.post("/parcelles/transfert", { animalId: cibleId, parcelleDestId });
+      notifySaved("Transfert effectué avec succès", "/parcelles");
+    } catch (err) {
+      toastError(err instanceof Error ? err.message : "Erreur");
+      setSubmitting(false);
+    }
   }
 
   return (
@@ -83,23 +101,14 @@ export default function TransfertParcellesPage() {
               </FormField>
 
               <FormField label={type === "individuel" ? "Animal *" : "Lot *"}>
-                <Select name="cibleId">
+                <Select value={cibleId} onValueChange={(v) => setCibleId(v ?? "")}>
                   <SelectTrigger className="h-10 w-full rounded-[6px] border border-border bg-card">
-                    <SelectValue placeholder={type === "individuel" ? "Rechercher un animal…" : "Rechercher un lot…"} />
+                    <SelectValue placeholder="Rechercher un animal…" />
                   </SelectTrigger>
                   <SelectContent>
-                    {type === "individuel" ? (
-                      <>
-                        <SelectItem value="ani-001">ANI-001 — Holstein (Parcelle Alpha)</SelectItem>
-                        <SelectItem value="ani-003">ANI-003 — Limousin (Parcelle Alpha)</SelectItem>
-                        <SelectItem value="ani-012">ANI-012 — Holstein (Parcelle Beta)</SelectItem>
-                      </>
-                    ) : (
-                      <>
-                        <SelectItem value="lot-a">LOT-A — 15 animaux (Parcelle Alpha)</SelectItem>
-                        <SelectItem value="lot-b">LOT-B — 8 animaux (Parcelle Beta)</SelectItem>
-                      </>
-                    )}
+                    {(animaux ?? []).map((a) => (
+                      <SelectItem key={a.id} value={a.id}>{a.identifiant} — {a.race?.nom} ({a.parcelle?.nom ?? "sans parcelle"})</SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </FormField>
@@ -109,13 +118,12 @@ export default function TransfertParcellesPage() {
                   <input type="text" disabled defaultValue="Parcelle Alpha" className={`${inputCls} bg-surface text-subtle cursor-not-allowed`} />
                 </FormField>
                 <FormField label="Parcelle de destination *">
-                  <Select name="parcelleDestId">
+                  <Select value={parcelleDestId} onValueChange={(v) => setParcelleDestId(v ?? "")}>
                     <SelectTrigger className="h-10 w-full rounded-[6px] border border-border bg-card">
                       <SelectValue placeholder="Sélectionner" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="parcelle-beta">Parcelle Beta (46 libres)</SelectItem>
-                      <SelectItem value="parcelle-gamma">Parcelle Gamma (42 libres)</SelectItem>
+                      {(parcelles ?? []).map((p) => <SelectItem key={p.id} value={p.id}>{p.nom} ({Math.max(0, p.capaciteMax - (p.nbActuels ?? 0))} libres)</SelectItem>)}
                     </SelectContent>
                   </Select>
                 </FormField>

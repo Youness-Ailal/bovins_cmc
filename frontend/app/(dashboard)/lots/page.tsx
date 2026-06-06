@@ -1,35 +1,41 @@
+"use client";
+
 import Link from "next/link";
 import Icon from "@/components/ui/Icon";
 import Badge from "@/components/ui/Badge";
+import DataTable, { Column } from "@/components/ui/DataTable";
+import { useApi } from "@/lib/useApi";
+import type { Lot } from "@/lib/types";
 
-const LOTS = [
-  {
-    id: "LOT-A",
-    nbAnimaux: 15,
-    phase: "Engraissement" as const,
-    gmq: "0.78 kg/j",
-    ic: "5.2",
-    cout: "48 250",
-    date: "12/01/2024",
-  },
-  {
-    id: "LOT-B",
-    nbAnimaux: 8,
-    phase: "Croissance" as const,
-    gmq: "0.82 kg/j",
-    ic: "6.4",
-    cout: "28 900",
-    date: "05/03/2024",
-  },
-];
-
-const PHASE_VARIANT = {
+const PHASE_VARIANT: Record<string, string> = {
   Croissance: "phase-croissance",
   Engraissement: "phase-engraissement",
   Finition: "phase-finition",
-} as const;
+};
+
+const COLUMNS: Column<Lot>[] = [
+  { key: "nom", label: "Nom du lot", width: "w-[140px]", render: (r) => <span className="font-inter text-[13px] font-semibold text-label">{r.nom}</span> },
+  { key: "nbAnimaux", label: "Nb animaux", width: "w-[100px]", render: (r) => <span className="font-inter text-[13px] text-subtle">{r.nbAnimaux ?? 0}</span> },
+  {
+    key: "phase", label: "Phase", width: "w-[140px]",
+    render: (r) => (r.phase ? <Badge variant={PHASE_VARIANT[r.phase] as Parameters<typeof Badge>[0]["variant"]}>{r.phase}</Badge> : <span className="text-placeholder">—</span>),
+  },
+  { key: "gmqMoyen", label: "GMQ moyen", width: "w-[110px]", render: (r) => <span className="font-inter text-[13px] text-subtle">{r.gmqMoyen ?? 0} kg/j</span> },
+  { key: "coutTotal", label: "Coût total (MAD)", width: "w-[150px]", render: (r) => <span className="font-inter text-[13px] text-label">{(r.coutTotal ?? 0).toLocaleString("fr-FR")}</span> },
+  { key: "dateCreation", label: "Date création", width: "w-[120px]", render: (r) => <span className="font-inter text-[13px] text-subtle">{r.dateCreation ? new Date(r.dateCreation).toLocaleDateString("fr-FR") : "—"}</span> },
+  {
+    key: "_actions", label: "Actions", width: "w-[80px]", align: "right",
+    render: (r) => (
+      <div className="flex items-center justify-end gap-3">
+        <Link href={`/lots/${r.id}`} className="text-placeholder hover:text-primary transition-colors"><Icon name="eye" size={15} /></Link>
+      </div>
+    ),
+  },
+];
 
 export default function ListeLotsPage() {
+  const { data: lots, loading, error } = useApi<Lot[]>("/lots");
+
   return (
     <div className="flex flex-1 flex-col overflow-hidden bg-surface">
       <header className="flex h-16 shrink-0 items-center justify-between border-b border-border-light bg-card px-7">
@@ -44,49 +50,11 @@ export default function ListeLotsPage() {
       </header>
 
       <div className="flex flex-1 flex-col gap-4 overflow-auto p-6">
-        <div className="overflow-hidden rounded-[10px] border border-border-light bg-card">
-          <div className="flex items-center gap-4 bg-surface px-4" style={{ height: 44 }}>
-            <span className="w-[140px] shrink-0 font-dm-sans text-xs font-semibold text-placeholder">Nom du lot</span>
-            <span className="w-[100px] shrink-0 font-dm-sans text-xs font-semibold text-placeholder">Nb animaux</span>
-            <span className="w-[140px] shrink-0 font-dm-sans text-xs font-semibold text-placeholder">Phase majoritaire</span>
-            <span className="w-[110px] shrink-0 font-dm-sans text-xs font-semibold text-placeholder">GMQ moyen</span>
-            <span className="w-[100px] shrink-0 font-dm-sans text-xs font-semibold text-placeholder">IC moyen</span>
-            <span className="w-[130px] shrink-0 font-dm-sans text-xs font-semibold text-placeholder">Coût total (MAD)</span>
-            <span className="w-[120px] shrink-0 font-dm-sans text-xs font-semibold text-placeholder">Date création</span>
-            <span className="flex-1 font-dm-sans text-xs font-semibold text-placeholder">Actions</span>
-          </div>
-
-          {LOTS.map((lot) => (
-            <div
-              key={lot.id}
-              className="flex items-center gap-4 border-b border-border-light px-4 last:border-b-0"
-              style={{ height: 52 }}
-            >
-              <span className="w-[140px] shrink-0 font-inter text-[13px] font-semibold text-label">{lot.id}</span>
-              <span className="w-[100px] shrink-0 font-inter text-[13px] text-subtle">{lot.nbAnimaux}</span>
-              <div className="flex w-[140px] shrink-0 items-center">
-                <Badge variant={PHASE_VARIANT[lot.phase]}>{lot.phase}</Badge>
-              </div>
-              <span className="w-[110px] shrink-0 font-inter text-[13px] text-subtle">{lot.gmq}</span>
-              <span className="w-[100px] shrink-0 font-inter text-[13px] text-subtle">{lot.ic}</span>
-              <span className="w-[130px] shrink-0 font-inter text-[13px] text-label">{lot.cout}</span>
-              <span className="w-[120px] shrink-0 font-inter text-[13px] text-subtle">{lot.date}</span>
-              <div className="flex flex-1 items-center gap-2">
-                <Link href={`/lots/${lot.id}`} className="text-placeholder hover:text-subtle transition-colors">
-                  <Icon name="eye" size={15} />
-                </Link>
-                <Link href={`/lots/${lot.id}/modifier`} className="text-placeholder hover:text-primary transition-colors">
-                  <Icon name="pencil" size={15} />
-                </Link>
-              </div>
-            </div>
-          ))}
-
-          <div className="flex items-center justify-between bg-surface px-4" style={{ height: 48 }}>
-            <span className="font-inter text-[13px] text-placeholder">← Précédent</span>
-            <span className="font-inter text-xs text-placeholder">Page 1 sur 5 lots actifs — Suivant →</span>
-          </div>
-        </div>
+        {loading && <p className="font-inter text-sm text-placeholder">Chargement…</p>}
+        {error && <p className="font-inter text-sm text-danger">{error}</p>}
+        {!loading && !error && (
+          <DataTable columns={COLUMNS} data={lots ?? []} keyExtractor={(l) => l.id} pagination={{ page: 1, total: 1, count: (lots ?? []).length }} />
+        )}
       </div>
     </div>
   );

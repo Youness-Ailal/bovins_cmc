@@ -1,26 +1,42 @@
+"use client";
+
+import { use } from "react";
 import Link from "next/link";
 import Icon from "@/components/ui/Icon";
 import Badge from "@/components/ui/Badge";
+import { useApi } from "@/lib/useApi";
+import type { Lot, Animal } from "@/lib/types";
 
-const LOT_ANIMALS = [
-  { id: "ANI-001", race: "Holstein", phase: "Croissance" as const, sante: "Sain" as const, gmq: "0.82" },
-  { id: "ANI-002", race: "Angus", phase: "Engraissement" as const, sante: "Malade" as const, gmq: "0.74" },
-  { id: "ANI-003", race: "Limousin", phase: "Finition" as const, sante: "Malade" as const, gmq: "0.65" },
-];
-
-const PHASE_VARIANT = {
+const PHASE_VARIANT: Record<string, string> = {
+  Veau: "phase-croissance",
   Croissance: "phase-croissance",
   Engraissement: "phase-engraissement",
   Finition: "phase-finition",
-} as const;
-
-const SANTE_VARIANT = {
+};
+const SANTE_VARIANT: Record<string, string> = {
   Sain: "sain",
+  "En observation": "phase-croissance",
+  "En traitement": "phase-engraissement",
   Malade: "malade",
-} as const;
+};
 
-export default async function FicheLotPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
+function StatCell({ label, value, color, last }: { label: string; value: string; color: string; last?: boolean }) {
+  return (
+    <div className={`flex flex-col items-center justify-center gap-1 px-6 py-4 ${!last ? "border-r border-border-light" : ""}`}>
+      <span className={`font-dm-sans text-2xl font-bold ${color}`}>{value}</span>
+      <span className="font-inter text-xs text-placeholder">{label}</span>
+    </div>
+  );
+}
+
+export default function FicheLotPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params);
+  const { data: lot, loading, error } = useApi<Lot>(`/lots/${id}`);
+
+  if (loading) return <div className="flex flex-1 items-center justify-center bg-surface font-inter text-sm text-placeholder">Chargement…</div>;
+  if (error || !lot) return <div className="flex flex-1 items-center justify-center bg-surface font-inter text-sm text-danger">{error || "Lot introuvable"}</div>;
+
+  const animaux = lot.animaux ?? [];
 
   return (
     <div className="flex flex-1 flex-col overflow-hidden bg-surface">
@@ -29,102 +45,43 @@ export default async function FicheLotPage({ params }: { params: Promise<{ id: s
           <Link href="/lots" className="font-inter text-sm text-placeholder hover:text-subtle transition-colors">Lots</Link>
           <span className="font-inter text-sm text-placeholder">/</span>
           <span className="font-dm-sans text-xl font-semibold text-label">Fiche lot</span>
-          <span className="font-inter text-sm text-placeholder">/ {id}</span>
+          <span className="font-inter text-sm text-placeholder">/ {lot.nom}</span>
         </div>
-        <Link href={`/lots/${id}/modifier`} className="flex items-center gap-1.5 rounded-[6px] border border-border-light bg-surface px-3.5 py-2 font-dm-sans text-[13px] font-semibold text-subtle hover:bg-border-light transition-colors">
-          <Icon name="pencil" size={14} />
-          Modifier
-        </Link>
       </header>
 
       <div className="flex shrink-0 border-b border-border-light bg-card">
-        <StatCell label="Animaux" value="15" color="text-label" />
-        <StatCell label="GMQ moyen" value="0.78 kg/j" color="text-primary" />
-        <StatCell label="IC moyen" value="5.2" color="text-label" />
-        <StatCell label="Coût total" value="48 250 MAD" color="text-label" last />
+        <StatCell label="Animaux" value={String(lot.nbAnimaux ?? animaux.length)} color="text-label" />
+        <StatCell label="GMQ moyen" value={`${lot.gmqMoyen ?? 0} kg/j`} color="text-primary" />
+        <StatCell label="Phase" value={lot.phase || "—"} color="text-label" />
+        <StatCell label="Coût total" value={`${(lot.coutTotal ?? 0).toLocaleString("fr-FR")} MAD`} color="text-label" last />
       </div>
 
-      <div className="flex flex-1 gap-4 overflow-auto p-6">
-        <div className="flex flex-1 flex-col gap-3">
-          <span className="font-dm-sans text-sm font-semibold text-label">Animaux du lot (15)</span>
-          <div className="overflow-hidden rounded-[10px] border border-border-light bg-card">
-            <div className="flex items-center gap-4 bg-surface px-3.5" style={{ height: 40 }}>
-              <span className="w-[130px] shrink-0 font-dm-sans text-[11px] font-semibold text-placeholder">Identifiant</span>
-              <span className="w-[110px] shrink-0 font-dm-sans text-[11px] font-semibold text-placeholder">Race</span>
-              <span className="w-[120px] shrink-0 font-dm-sans text-[11px] font-semibold text-placeholder">Phase</span>
-              <span className="w-[120px] shrink-0 font-dm-sans text-[11px] font-semibold text-placeholder">État santé</span>
-              <span className="w-[90px] shrink-0 font-dm-sans text-[11px] font-semibold text-placeholder">GMQ</span>
-              <span className="flex-1 font-dm-sans text-[11px] font-semibold text-placeholder">Actions</span>
-            </div>
-
-            {LOT_ANIMALS.map((a, i) => (
-              <div
-                key={a.id}
-                className={`flex items-center gap-4 px-3.5 ${i < LOT_ANIMALS.length - 1 ? "border-b border-border-light" : ""}`}
-                style={{ height: 46 }}
-              >
-                <span className="w-[130px] shrink-0 font-inter text-xs font-medium text-label">{a.id}</span>
-                <span className="w-[110px] shrink-0 font-inter text-xs text-subtle">{a.race}</span>
-                <div className="flex w-[120px] shrink-0 items-center">
-                  <Badge variant={PHASE_VARIANT[a.phase]} className="text-[10px]">{a.phase}</Badge>
-                </div>
-                <div className="flex w-[120px] shrink-0 items-center">
-                  <Badge variant={SANTE_VARIANT[a.sante]} className="text-[10px]">{a.sante}</Badge>
-                </div>
-                <span className="w-[90px] shrink-0 font-inter text-xs text-subtle">{a.gmq}</span>
-                <div className="flex flex-1 items-center">
-                  <Link href={`/animaux/${a.id}`} className="text-placeholder hover:text-subtle transition-colors">
-                    <Icon name="eye" size={13} />
-                  </Link>
-                </div>
+      <div className="flex flex-1 flex-col gap-3 overflow-auto p-6">
+        <span className="font-dm-sans text-sm font-semibold text-label">Animaux du lot ({animaux.length})</span>
+        <div className="overflow-hidden rounded-[10px] border border-border-light bg-card">
+          <div className="flex items-center gap-4 bg-surface px-5" style={{ height: 44 }}>
+            <span className="w-[130px] shrink-0 font-inter text-[11px] font-bold uppercase tracking-wide text-placeholder">Identifiant</span>
+            <span className="w-[110px] shrink-0 font-inter text-[11px] font-bold uppercase tracking-wide text-placeholder">Race</span>
+            <span className="w-[130px] shrink-0 font-inter text-[11px] font-bold uppercase tracking-wide text-placeholder">Phase</span>
+            <span className="w-[130px] shrink-0 font-inter text-[11px] font-bold uppercase tracking-wide text-placeholder">État santé</span>
+            <span className="w-[80px] shrink-0 font-inter text-[11px] font-bold uppercase tracking-wide text-placeholder">GMQ</span>
+            <span className="flex-1 font-inter text-[11px] font-bold uppercase tracking-wide text-placeholder">Actions</span>
+          </div>
+          {animaux.length === 0 && <div className="py-8 text-center font-inter text-[13px] text-placeholder">Aucun animal dans ce lot</div>}
+          {animaux.map((a: Animal) => (
+            <div key={a.id} className="flex items-center gap-4 border-b border-border-light px-5 last:border-b-0" style={{ height: 52 }}>
+              <span className="w-[130px] shrink-0 font-inter text-[13px] font-medium text-label">{a.identifiant}</span>
+              <span className="w-[110px] shrink-0 font-inter text-[13px] text-subtle">{a.race?.nom ?? "—"}</span>
+              <div className="flex w-[130px] shrink-0 items-center"><Badge variant={PHASE_VARIANT[a.phase] as Parameters<typeof Badge>[0]["variant"]}>{a.phase}</Badge></div>
+              <div className="flex w-[130px] shrink-0 items-center"><Badge variant={SANTE_VARIANT[a.etatSante] as Parameters<typeof Badge>[0]["variant"]}>{a.etatSante}</Badge></div>
+              <span className="w-[80px] shrink-0 font-inter text-[13px] text-subtle">{a.gmqActuel}</span>
+              <div className="flex flex-1 items-center">
+                <Link href={`/animaux/${a.id}`} className="text-placeholder hover:text-primary transition-colors"><Icon name="eye" size={15} /></Link>
               </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="flex w-[280px] shrink-0 flex-col gap-3">
-          <span className="font-dm-sans text-sm font-semibold text-label">Alertes du groupe</span>
-
-          <div className="flex flex-col gap-2 rounded-[8px] border border-danger/30 bg-danger/5 p-3">
-            <div className="flex items-center gap-1.5">
-              <Icon name="triangle-alert" size={14} className="shrink-0 text-danger" />
-              <span className="font-dm-sans text-xs font-semibold text-danger">ANI-003 — Santé critique</span>
             </div>
-            <p className="font-inter text-[11px] leading-relaxed text-danger/80">
-              Cet animal est marqué malade. Consulter un vétérinaire.
-            </p>
-          </div>
-
-          <div className="flex flex-col gap-2 rounded-[8px] border border-warning/30 bg-warning/5 p-3">
-            <div className="flex items-center gap-1.5">
-              <Icon name="trending-down" size={14} className="shrink-0 text-warning" />
-              <span className="font-dm-sans text-xs font-semibold text-warning">GMQ en baisse ce mois</span>
-            </div>
-            <p className="font-inter text-[11px] leading-relaxed text-warning/80">
-              Le GMQ moyen du lot a chuté de 12% par rapport au mois précédent.
-            </p>
-          </div>
-
-          <div className="flex flex-col gap-2 rounded-[8px] border border-info/30 bg-info/5 p-3">
-            <div className="flex items-center gap-1.5">
-              <Icon name="syringe" size={14} className="shrink-0 text-info" />
-              <span className="font-dm-sans text-xs font-semibold text-info">Vaccination à prévoir</span>
-            </div>
-            <p className="font-inter text-[11px] leading-relaxed text-info/80">
-              Rappel : vaccin bovin prévu dans 7 jours pour 5 animaux.
-            </p>
-          </div>
+          ))}
         </div>
       </div>
-    </div>
-  );
-}
-
-function StatCell({ label, value, color, last }: { label: string; value: string; color: string; last?: boolean }) {
-  return (
-    <div className={`flex flex-col items-center justify-center gap-1 px-6 py-4 ${!last ? "border-r border-border-light" : ""}`}>
-      <span className={`font-dm-sans text-2xl font-bold ${color}`}>{value}</span>
-      <span className="font-inter text-xs text-placeholder">{label}</span>
     </div>
   );
 }

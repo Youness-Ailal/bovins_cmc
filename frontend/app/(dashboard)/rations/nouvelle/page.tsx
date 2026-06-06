@@ -4,6 +4,8 @@ import { useRef, useState } from "react";
 import Link from "next/link";
 import Icon from "@/components/ui/Icon";
 import { useSaveToast } from "@/lib/useSaveToast";
+import { useToast } from "@/components/ui/Toast";
+import { api } from "@/lib/api";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
@@ -29,10 +31,17 @@ const STOCK_DISPONIBLE = [
   { id: "s6", nom: "Mélasse", unite: "L", prixUnit: 3.5 },
 ];
 
+const PHASE_MAP: Record<string, string> = {
+  veau: "Veau", croissance: "Croissance", engraissement: "Engraissement", finition: "Finition",
+};
+
 export default function NouvelleRationPage() {
+  const [nom, setNom] = useState("");
   const [phase, setPhase] = useState("");
   const [ingredients, setIngredients] = useState<Ingredient[]>([]);
   const [cible, setCible] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const { error: toastError } = useToast();
   const nextId = useRef(1);
 
   function ajouterIngredient() {
@@ -67,10 +76,28 @@ export default function NouvelleRationPage() {
 
   const notifySaved = useSaveToast();
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    // TODO: POST /api/rations { nom, phase, cible, ingredients, coutJour }
-    notifySaved("Ration créée avec succès", "/rations");
+    if (!nom) return toastError("Le nom de la ration est requis");
+    if (ingredients.length === 0) return toastError("Ajoutez au moins un ingrédient");
+    setSubmitting(true);
+    try {
+      await api.post("/rations", {
+        nom,
+        phase: PHASE_MAP[phase] ?? "",
+        cible,
+        ingredients: ingredients.map((i) => ({
+          nom: i.nom,
+          quantite: Number(i.quantite) || 0,
+          unite: i.unite,
+          prixUnitaire: i.prixUnit,
+        })),
+      });
+      notifySaved("Ration créée avec succès", "/rations");
+    } catch (err) {
+      toastError(err instanceof Error ? err.message : "Erreur");
+      setSubmitting(false);
+    }
   }
 
   return (
@@ -100,7 +127,7 @@ export default function NouvelleRationPage() {
             <div className="mt-4 flex gap-4">
               <div className="flex flex-1 flex-col gap-1.5">
                 <label className="font-inter text-xs font-medium text-label">Nom de la ration *</label>
-                <input type="text" name="nom" placeholder="Ex: Ration Finition Charolaise" required className="h-10 w-full rounded-[6px] border border-border bg-card px-3 font-inter text-[13px] text-label placeholder:text-placeholder focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary" />
+                <input type="text" value={nom} onChange={(e) => setNom(e.target.value)} placeholder="Ex: Ration Finition Charolaise" className="h-10 w-full rounded-[6px] border border-border bg-card px-3 font-inter text-[13px] text-label placeholder:text-placeholder focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary" />
               </div>
               <div className="flex w-[220px] flex-col gap-1.5">
                 <label className="font-inter text-xs font-medium text-label">Phase cible *</label>

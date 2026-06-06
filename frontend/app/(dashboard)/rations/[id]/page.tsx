@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useRef, useState } from "react";
+import { use, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import Icon from "@/components/ui/Icon";
 import Badge from "@/components/ui/Badge";
@@ -8,6 +8,13 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { useSaveToast } from "@/lib/useSaveToast";
+import { useToast } from "@/components/ui/Toast";
+import { useApi } from "@/lib/useApi";
+import { api } from "@/lib/api";
+import type { Ration } from "@/lib/types";
+
+const PHASE_TO_ENUM: Record<string, string> = { croissance: "Croissance", engraissement: "Engraissement", finition: "Finition" };
+const PHASE_FROM_ENUM: Record<string, string> = { Croissance: "croissance", Engraissement: "engraissement", Finition: "finition" };
 
 interface Ingredient {
   id: string;
@@ -40,10 +47,26 @@ const PHASE_BADGE: Record<string, { variant: string; label: string }> = {
 
 export default function FicheRationPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
+  const { data: ration } = useApi<Ration>(`/rations/${id}`);
+  const [nom, setNom] = useState("");
   const [phase, setPhase] = useState("engraissement");
   const [ingredients, setIngredients] = useState<Ingredient[]>(INITIAL);
+  const [submitting, setSubmitting] = useState(false);
   const nextId = useRef(100);
   const notifySaved = useSaveToast();
+  const { error: toastError } = useToast();
+
+  useEffect(() => {
+    if (ration) {
+      setNom(ration.nom);
+      setPhase(PHASE_FROM_ENUM[ration.phase] ?? "engraissement");
+      setIngredients(
+        (ration.ingredients ?? []).map((ing, idx) => ({
+          id: String(idx + 1), nom: ing.nom, quantite: String(ing.quantite), unite: ing.unite, coutUnit: ing.prixUnitaire,
+        }))
+      );
+    }
+  }, [ration]);
 
   function updateIngredient(rowId: string, field: keyof Ingredient, value: string) {
     setIngredients((prev) =>
@@ -74,10 +97,21 @@ export default function FicheRationPage({ params }: { params: Promise<{ id: stri
     .reduce((s, i) => s + parseFloat(i.quantite || "0") * i.coutUnit, 0)
     .toFixed(2);
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    // TODO: PUT /api/rations/:id { nom, phase, ingredients }
-    notifySaved("Ration enregistrée avec succès", "/rations");
+    if (!nom) return toastError("Le nom de la ration est requis");
+    setSubmitting(true);
+    try {
+      await api.put(`/rations/${id}`, {
+        nom,
+        phase: PHASE_TO_ENUM[phase] ?? "",
+        ingredients: ingredients.map((i) => ({ nom: i.nom, quantite: Number(i.quantite) || 0, unite: i.unite, prixUnitaire: i.coutUnit })),
+      });
+      notifySaved("Ration enregistrée avec succès", "/rations");
+    } catch (err) {
+      toastError(err instanceof Error ? err.message : "Erreur");
+      setSubmitting(false);
+    }
   }
 
   const badge = PHASE_BADGE[phase];
@@ -107,7 +141,7 @@ export default function FicheRationPage({ params }: { params: Promise<{ id: stri
         <div className="flex gap-4">
           <div className="flex flex-1 flex-col gap-1.5">
             <label className="font-inter text-xs font-medium text-label">Nom de la ration *</label>
-            <input type="text" name="nom" defaultValue="Ration Bovins Adultes" required className="h-10 w-full rounded-[6px] border border-border bg-card px-3 font-inter text-[13px] text-label focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary" />
+            <input type="text" value={nom} onChange={(e) => setNom(e.target.value)} required className="h-10 w-full rounded-[6px] border border-border bg-card px-3 font-inter text-[13px] text-label focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary" />
           </div>
           <div className="flex w-[280px] flex-col gap-1.5">
             <label className="font-inter text-xs font-medium text-label">Phase cible *</label>

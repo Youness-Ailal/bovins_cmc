@@ -3,11 +3,19 @@
 import Link from "next/link";
 import Icon from "@/components/ui/Icon";
 import { useSaveToast } from "@/lib/useSaveToast";
+import { useToast } from "@/components/ui/Toast";
+import { useApi } from "@/lib/useApi";
+import { api } from "@/lib/api";
 import DatePicker from "@/components/ui/DatePicker";
 import { useState } from "react";
+import type { Animal } from "@/lib/types";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
+
+const ETAT_MAP: Record<string, string> = {
+  sain: "Sain", observation: "En observation", traitement: "En traitement", malade: "Malade",
+};
 
 function FormField({ label, children }: { label: string; children: React.ReactNode }) {
   return (
@@ -28,15 +36,36 @@ const ETATS = [
 ];
 
 export default function NouvelEtatSantePage() {
+  const { data: animaux } = useApi<Animal[]>("/animaux");
   const [etat, setEtat] = useState("sain");
   const [date, setDate] = useState<Date | undefined>(new Date());
+  const [animalId, setAnimalId] = useState("");
+  const [action, setAction] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
   const notifySaved = useSaveToast();
+  const { error: toastError } = useToast();
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    // TODO: POST /api/sante/etats
-    notifySaved("État de santé enregistré", "/sante");
+    const fd = new FormData(e.currentTarget as HTMLFormElement);
+    if (!animalId) return toastError("Sélectionnez un animal");
+    setSubmitting(true);
+    try {
+      await api.post("/sante/etats", {
+        animal: animalId,
+        etat: ETAT_MAP[etat],
+        date: date ?? new Date(),
+        temperature: fd.get("temperature") ? Number(fd.get("temperature")) : null,
+        poids: fd.get("poids") ? Number(fd.get("poids")) : null,
+        symptomes: String(fd.get("symptomes") || ""),
+        action,
+      });
+      notifySaved("État de santé enregistré", "/sante/etat");
+    } catch (err) {
+      toastError(err instanceof Error ? err.message : "Erreur");
+      setSubmitting(false);
+    }
   }
 
   return (
@@ -67,14 +96,12 @@ export default function NouvelEtatSantePage() {
             <div className="mt-6 flex flex-col gap-4">
               <div className="flex gap-4">
                 <FormField label="Animal concerné *">
-                  <Select name="animalId">
+                  <Select value={animalId} onValueChange={(v) => setAnimalId(v ?? "")}>
                     <SelectTrigger className="h-10 w-full rounded-[6px] border border-border bg-card">
                       <SelectValue placeholder="Rechercher un animal…" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="ani-001">ANI-001 — Holstein</SelectItem>
-                      <SelectItem value="ani-012">ANI-012 — Holstein</SelectItem>
-                      <SelectItem value="ani-031">ANI-031 — Angus</SelectItem>
+                      {(animaux ?? []).map((a) => <SelectItem key={a.id} value={a.id}>{a.identifiant} — {a.race?.nom}</SelectItem>)}
                     </SelectContent>
                   </Select>
                 </FormField>
@@ -115,7 +142,7 @@ export default function NouvelEtatSantePage() {
               </FormField>
 
               <FormField label="Action recommandée">
-                <Select name="action">
+                <Select value={action} onValueChange={(v) => setAction(v ?? "")}>
                   <SelectTrigger className="h-10 w-full rounded-[6px] border border-border bg-card">
                     <SelectValue placeholder="Aucune action requise" />
                   </SelectTrigger>

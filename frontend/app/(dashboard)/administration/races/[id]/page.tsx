@@ -1,9 +1,13 @@
 "use client";
 
-import { use } from "react";
+import { use, useState } from "react";
 import Link from "next/link";
 import Icon from "@/components/ui/Icon";
 import { useSaveToast } from "@/lib/useSaveToast";
+import { useToast } from "@/components/ui/Toast";
+import { useApi } from "@/lib/useApi";
+import { api } from "@/lib/api";
+import type { Race } from "@/lib/types";
 
 function FormField({ label, children, hint }: { label: string; children: React.ReactNode; hint?: string }) {
   return (
@@ -17,21 +21,33 @@ function FormField({ label, children, hint }: { label: string; children: React.R
 
 const inputCls = "h-10 w-full rounded-[6px] border border-border bg-card px-3 font-inter text-[13px] text-label placeholder:text-placeholder transition-colors focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary";
 
-const RACES: Record<string, { nom: string; origine: string; poidsAdulte: string; gmqCible: string; ic: string; dureeEngraissement: string; description: string }> = {
-  "RAC-001": { nom: "Holstein", origine: "Europe du Nord", poidsAdulte: "650", gmqCible: "1.40", ic: "6.5", dureeEngraissement: "180", description: "Race laitière à haute production." },
-  "RAC-002": { nom: "Angus", origine: "Écosse", poidsAdulte: "600", gmqCible: "1.35", ic: "6.0", dureeEngraissement: "160", description: "Race à viande rustique." },
-};
-
 export default function ModifierRacePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
-  const race = RACES[id] ?? { nom: "", origine: "", poidsAdulte: "", gmqCible: "", ic: "", dureeEngraissement: "", description: "" };
+  const { data: race, loading } = useApi<Race>(`/races/${id}`);
+  const [submitting, setSubmitting] = useState(false);
 
   const notifySaved = useSaveToast();
+  const { error: toastError } = useToast();
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    // TODO: PUT /api/races/:id
-    notifySaved("Race mise à jour avec succès", "/administration/races");
+    const fd = new FormData(e.currentTarget as HTMLFormElement);
+    setSubmitting(true);
+    try {
+      await api.put(`/races/${id}`, {
+        nom: String(fd.get("nom") || ""),
+        origine: String(fd.get("origine") || ""),
+        poidsAdulte: Number(fd.get("poidsAdulte")) || 0,
+        gmqCible: Number(fd.get("gmqCible")) || 0,
+        icCible: Number(fd.get("ic")) || 0,
+        dureeEngraissement: Number(fd.get("dureeEngraissement")) || 0,
+        description: String(fd.get("description") || ""),
+      });
+      notifySaved("Race mise à jour avec succès", "/administration/races");
+    } catch (err) {
+      toastError(err instanceof Error ? err.message : "Erreur");
+      setSubmitting(false);
+    }
   }
 
   return (
@@ -56,9 +72,12 @@ export default function ModifierRacePage({ params }: { params: Promise<{ id: str
 
       <div className="flex flex-1 items-start justify-center overflow-auto p-8">
         <div className="w-full max-w-[560px]">
+          {loading || !race ? (
+            <p className="font-inter text-sm text-placeholder">Chargement…</p>
+          ) : (
           <form id="race-form" onSubmit={handleSubmit} noValidate className="rounded-[12px] border border-border-light bg-card p-8">
             <h2 className="font-dm-sans text-base font-bold text-label">Modifier la race</h2>
-            <p className="mt-1 font-inter text-[13px] text-subtle">Mettez à jour les paramètres zootechniques de {race.nom || id}.</p>
+            <p className="mt-1 font-inter text-[13px] text-subtle">Mettez à jour les paramètres zootechniques de {race.nom}.</p>
 
             <div className="mt-6 flex flex-col gap-4">
               <div className="flex gap-4">
@@ -79,7 +98,7 @@ export default function ModifierRacePage({ params }: { params: Promise<{ id: str
               </div>
               <div className="flex gap-4">
                 <FormField label="IC cible">
-                  <input type="number" name="ic" defaultValue={race.ic} min="0" step="0.1" className={inputCls} />
+                  <input type="number" name="ic" defaultValue={race.icCible} min="0" step="0.1" className={inputCls} />
                 </FormField>
                 <FormField label="Durée d'engraissement (jours)">
                   <input type="number" name="dureeEngraissement" defaultValue={race.dureeEngraissement} min="0" className={inputCls} />
@@ -100,6 +119,7 @@ export default function ModifierRacePage({ params }: { params: Promise<{ id: str
               </button>
             </div>
           </form>
+          )}
         </div>
       </div>
     </div>

@@ -4,37 +4,22 @@ import { useState } from "react";
 import Link from "next/link";
 import Icon from "@/components/ui/Icon";
 import DataTable, { Column } from "@/components/ui/DataTable";
-
-interface Distribution {
-  id: string;
-  date: string;
-  ration: string;
-  cible: string;
-  nbAnimaux: number;
-  quantite: string;
-  cout: string;
-}
-
-const DISTRIBUTIONS: Distribution[] = [
-  { id: "DST-021", date: "02/06/2026", ration: "Ration Bovins Adultes", cible: "Parcelle Alpha", nbAnimaux: 78, quantite: "624 kg", cout: "1 435 MAD" },
-  { id: "DST-020", date: "01/06/2026", ration: "Ration Veaux", cible: "Parcelle Gamma", nbAnimaux: 58, quantite: "290 kg", cout: "742 MAD" },
-  { id: "DST-019", date: "01/06/2026", ration: "Ration Bovins Adultes", cible: "Parcelle Beta", nbAnimaux: 34, quantite: "272 kg", cout: "627 MAD" },
-  { id: "DST-018", date: "31/05/2026", ration: "Ration Finition", cible: "LOT-B", nbAnimaux: 8, quantite: "96 kg", cout: "181 MAD" },
-];
+import { useApi } from "@/lib/useApi";
+import type { Distribution } from "@/lib/types";
 
 const COLUMNS: Column<Distribution>[] = [
-  { key: "id", label: "Réf.", width: "w-[100px]", render: (r) => <span className="font-inter text-[13px] font-semibold text-label">{r.id}</span> },
-  { key: "date", label: "Date", width: "w-[110px]" },
-  { key: "ration", label: "Ration", width: "w-[220px]" },
-  { key: "cible", label: "Cible", width: "w-[160px]" },
+  { key: "date", label: "Date", width: "w-[120px]", render: (r) => <span className="font-inter text-[13px] text-subtle">{new Date(r.date).toLocaleDateString("fr-FR")}</span> },
+  { key: "ration", label: "Ration", width: "w-[220px]", render: (r) => <span className="font-inter text-[13px] font-semibold text-label">{r.ration?.nom ?? "—"}</span> },
+  { key: "cible", label: "Cible", width: "w-[160px]", render: (r) => <span className="font-inter text-[13px] text-subtle">{r.cible || "—"}</span> },
   { key: "nbAnimaux", label: "Animaux", width: "w-[90px]", render: (r) => <span className="font-inter text-[13px] text-subtle">{r.nbAnimaux}</span> },
-  { key: "quantite", label: "Quantité", width: "w-[110px]" },
-  { key: "cout", label: "Coût total", width: "w-[120px]", render: (r) => <span className="font-inter text-[13px] font-semibold text-label">{r.cout}</span> },
+  { key: "quantite", label: "Quantité", width: "w-[110px]", render: (r) => <span className="font-inter text-[13px] text-subtle">{r.quantite} kg</span> },
+  { key: "coutEstime", label: "Coût total", width: "w-[120px]", render: (r) => <span className="font-inter text-[13px] font-semibold text-label">{r.coutEstime.toLocaleString("fr-FR")} MAD</span> },
 ];
 
 export default function HistoriqueDistributionsPage() {
+  const { data: distributions, loading, error } = useApi<Distribution[]>("/rations/distributions");
   const [search, setSearch] = useState("");
-  const filtered = DISTRIBUTIONS.filter((d) => d.ration.toLowerCase().includes(search.toLowerCase()) || d.cible.toLowerCase().includes(search.toLowerCase()));
+  const filtered = (distributions ?? []).filter((d) => (d.ration?.nom ?? "").toLowerCase().includes(search.toLowerCase()) || (d.cible ?? "").toLowerCase().includes(search.toLowerCase()));
 
   return (
     <div className="flex flex-1 flex-col overflow-hidden bg-surface">
@@ -62,12 +47,11 @@ export default function HistoriqueDistributionsPage() {
           ))}
         </div>
 
-        <DataTable
-          columns={COLUMNS}
-          data={filtered}
-          keyExtractor={(d) => d.id}
-          pagination={{ page: 1, total: 3, count: 21 }}
-        />
+        {loading && <p className="font-inter text-sm text-placeholder">Chargement…</p>}
+        {error && <p className="font-inter text-sm text-danger">{error}</p>}
+        {!loading && !error && (
+          <DataTable columns={COLUMNS} data={filtered} keyExtractor={(d) => d.id} pagination={{ page: 1, total: 1, count: (distributions ?? []).length }} />
+        )}
       </div>
     </div>
   );

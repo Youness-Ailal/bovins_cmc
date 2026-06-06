@@ -3,6 +3,8 @@
 import Link from "next/link";
 import Icon from "@/components/ui/Icon";
 import { useSaveToast } from "@/lib/useSaveToast";
+import { useToast } from "@/components/ui/Toast";
+import { api } from "@/lib/api";
 import DatePicker from "@/components/ui/DatePicker";
 import { useState } from "react";
 import {
@@ -21,14 +23,25 @@ function FormField({ label, children }: { label: string; children: React.ReactNo
 const inputCls = "h-10 w-full rounded-[6px] border border-border bg-card px-3 font-inter text-[13px] text-label placeholder:text-placeholder transition-colors focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary";
 
 export default function NouveauLotPage() {
-  const [dateCreation, setDateCreation] = useState<Date | undefined>(new Date());
-
   const notifySaved = useSaveToast();
+  const { error: toastError } = useToast();
+  const [nom, setNom] = useState("");
+  const [phase, setPhase] = useState("");
+  const [description, setDescription] = useState("");
+  const [dateCreation, setDateCreation] = useState<Date | undefined>(new Date());
+  const [submitting, setSubmitting] = useState(false);
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    // TODO: POST /api/lots
-    notifySaved("Lot créé avec succès", "/lots");
+    if (!nom) return toastError("Le nom du lot est requis");
+    setSubmitting(true);
+    try {
+      await api.post("/lots", { nom, phase, description, dateCreation: dateCreation ?? new Date() });
+      notifySaved("Lot créé avec succès", "/lots");
+    } catch (err) {
+      toastError(err instanceof Error ? err.message : "Erreur");
+      setSubmitting(false);
+    }
   }
 
   return (
@@ -43,7 +56,7 @@ export default function NouveauLotPage() {
           <Link href="/lots" className="flex items-center gap-1.5 rounded-[6px] border border-border-light bg-surface px-3.5 py-2 font-dm-sans text-[13px] font-semibold text-subtle hover:bg-border-light transition-colors">
             Annuler
           </Link>
-          <button type="submit" form="lot-form" className="flex items-center gap-1.5 rounded-[6px] bg-primary px-3.5 py-2 font-dm-sans text-[13px] font-semibold text-white hover:bg-primary-hover transition-colors">
+          <button type="submit" form="lot-form" disabled={submitting} className="flex items-center gap-1.5 rounded-[6px] bg-primary px-3.5 py-2 font-dm-sans text-[13px] font-semibold text-white hover:bg-primary-hover transition-colors disabled:opacity-50">
             <Icon name="save" size={14} />
             Créer le lot
           </button>
@@ -59,7 +72,7 @@ export default function NouveauLotPage() {
             <div className="mt-6 flex flex-col gap-4">
               <div className="flex gap-4">
                 <FormField label="Nom du lot *">
-                  <input type="text" name="nom" placeholder="Ex: LOT-C" required className={inputCls} />
+                  <input type="text" value={nom} onChange={(e) => setNom(e.target.value)} placeholder="Ex: LOT-C" className={inputCls} />
                 </FormField>
                 <FormField label="Date de création *">
                   <DatePicker value={dateCreation} onChange={setDateCreation} />
@@ -67,20 +80,20 @@ export default function NouveauLotPage() {
               </div>
 
               <FormField label="Phase majoritaire">
-                <Select name="phase">
+                <Select value={phase} onValueChange={(v) => setPhase(v ?? "")}>
                   <SelectTrigger className="h-10 w-full rounded-[6px] border border-border bg-card">
                     <SelectValue placeholder="Sélectionner la phase" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="croissance">Croissance</SelectItem>
-                    <SelectItem value="engraissement">Engraissement</SelectItem>
-                    <SelectItem value="finition">Finition</SelectItem>
+                    <SelectItem value="Croissance">Croissance</SelectItem>
+                    <SelectItem value="Engraissement">Engraissement</SelectItem>
+                    <SelectItem value="Finition">Finition</SelectItem>
                   </SelectContent>
                 </Select>
               </FormField>
 
               <FormField label="Description / Objectif">
-                <textarea name="description" rows={3} className="w-full resize-none rounded-[6px] border border-border bg-card p-3 font-inter text-[13px] text-label placeholder:text-placeholder focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary" placeholder="Objectif de production, critères de sélection…" />
+                <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={3} className="w-full resize-none rounded-[6px] border border-border bg-card p-3 font-inter text-[13px] text-label placeholder:text-placeholder focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary" placeholder="Objectif de production, critères de sélection…" />
               </FormField>
             </div>
 
@@ -88,7 +101,7 @@ export default function NouveauLotPage() {
               <Link href="/lots" className="flex items-center rounded-[6px] border border-border bg-surface px-4 py-2 font-dm-sans text-[13px] font-semibold text-subtle hover:bg-border-light transition-colors">
                 Annuler
               </Link>
-              <button type="submit" className="flex items-center gap-1.5 rounded-[6px] bg-primary px-4 py-2 font-dm-sans text-[13px] font-semibold text-white hover:bg-primary-hover transition-colors">
+              <button type="submit" disabled={submitting} className="flex items-center gap-1.5 rounded-[6px] bg-primary px-4 py-2 font-dm-sans text-[13px] font-semibold text-white hover:bg-primary-hover transition-colors disabled:opacity-50">
                 <Icon name="save" size={14} />
                 Créer le lot
               </button>

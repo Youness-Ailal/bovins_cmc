@@ -4,6 +4,8 @@ import { useState } from "react";
 import Link from "next/link";
 import Icon from "@/components/ui/Icon";
 import { useSaveToast } from "@/lib/useSaveToast";
+import { useToast } from "@/components/ui/Toast";
+import { api } from "@/lib/api";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
@@ -20,15 +22,44 @@ function FormField({ label, children, hint }: { label: string; children: React.R
 
 const inputCls = "h-10 w-full rounded-[6px] border border-border bg-card px-3 font-inter text-[13px] text-label placeholder:text-placeholder transition-colors focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary";
 
+const CAT_MAP: Record<string, string> = {
+  cereales: "Céréales", fourrages: "Fourrages", concentres: "Concentrés",
+  complements: "Compléments", additifs: "Additifs", medicaments: "Médicaments",
+};
+
 export default function NouvelArticlePage() {
   const [unite, setUnite] = useState("kg");
+  const [categorie, setCategorie] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
   const notifySaved = useSaveToast();
+  const { error: toastError } = useToast();
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    // TODO: POST /api/stocks
-    notifySaved("Article ajouté au stock", "/stocks");
+    const fd = new FormData(e.currentTarget as HTMLFormElement);
+    const designation = String(fd.get("designation") || "").trim();
+    if (!designation) return toastError("La désignation est requise");
+    if (!categorie) return toastError("La catégorie est requise");
+    setSubmitting(true);
+    try {
+      await api.post("/stocks", {
+        designation,
+        reference: String(fd.get("reference") || ""),
+        categorie: CAT_MAP[categorie],
+        unite,
+        quantite: Number(fd.get("quantite")) || 0,
+        seuil: Number(fd.get("seuil")) || 0,
+        prixUnitaire: Number(fd.get("prixUnitaire")) || 0,
+        datePeremption: fd.get("datePeremption") || null,
+        fournisseur: String(fd.get("fournisseur") || ""),
+        notes: String(fd.get("notes") || ""),
+      });
+      notifySaved("Article ajouté au stock", "/stocks");
+    } catch (err) {
+      toastError(err instanceof Error ? err.message : "Erreur");
+      setSubmitting(false);
+    }
   }
 
   return (
@@ -68,7 +99,7 @@ export default function NouvelArticlePage() {
 
               <div className="flex gap-4">
                 <FormField label="Catégorie *">
-                  <Select name="categorie">
+                  <Select value={categorie} onValueChange={(v) => setCategorie(v ?? "")}>
                     <SelectTrigger className="h-10 w-full rounded-[6px] border border-border bg-card">
                       <SelectValue placeholder="Sélectionner" />
                     </SelectTrigger>

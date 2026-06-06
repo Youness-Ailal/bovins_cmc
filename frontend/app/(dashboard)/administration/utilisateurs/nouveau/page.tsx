@@ -4,9 +4,15 @@ import { useState } from "react";
 import Link from "next/link";
 import Icon from "@/components/ui/Icon";
 import { useSaveToast } from "@/lib/useSaveToast";
+import { useToast } from "@/components/ui/Toast";
+import { api } from "@/lib/api";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
+
+const ROLE_MAP: Record<string, string> = {
+  admin: "Admin", responsable: "Responsable", veterinaire: "Vétérinaire", operateur: "Opérateur",
+};
 
 function FormField({ label, children, hint }: { label: string; children: React.ReactNode; hint?: string }) {
   return (
@@ -22,13 +28,33 @@ const inputCls = "h-10 w-full rounded-[6px] border border-border bg-card px-3 fo
 
 export default function NouvelUtilisateurPage() {
   const [sendEmail, setSendEmail] = useState(true);
+  const [role, setRole] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
   const notifySaved = useSaveToast();
+  const { error: toastError } = useToast();
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    // TODO: POST /api/utilisateurs
-    notifySaved("Compte créé avec succès", "/administration");
+    const fd = new FormData(e.currentTarget as HTMLFormElement);
+    const password = String(fd.get("password") || "");
+    if (password !== String(fd.get("confirmPassword") || "")) return toastError("Les mots de passe ne correspondent pas");
+    if (password.length < 6) return toastError("Le mot de passe doit faire au moins 6 caractères");
+    if (!role) return toastError("Le rôle est requis");
+    setSubmitting(true);
+    try {
+      await api.post("/users", {
+        prenom: String(fd.get("prenom") || ""),
+        nom: String(fd.get("nom") || ""),
+        email: String(fd.get("email") || ""),
+        password,
+        role: ROLE_MAP[role],
+      });
+      notifySaved("Compte créé avec succès", "/administration");
+    } catch (err) {
+      toastError(err instanceof Error ? err.message : "Erreur");
+      setSubmitting(false);
+    }
   }
 
   return (
@@ -69,13 +95,14 @@ export default function NouvelUtilisateurPage() {
                 <input type="email" name="email" placeholder="nom@bovitrack.ma" required autoComplete="email" className={inputCls} />
               </FormField>
               <FormField label="Rôle *">
-                <Select name="role">
+                <Select value={role} onValueChange={(v) => setRole(v ?? "")}>
                   <SelectTrigger className="h-10 w-full rounded-[6px] border border-border bg-card">
                     <SelectValue placeholder="Sélectionner un rôle" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="admin">Administrateur — accès total</SelectItem>
                     <SelectItem value="responsable">Responsable ferme — lecture + écriture</SelectItem>
+                    <SelectItem value="veterinaire">Vétérinaire — santé & traitements</SelectItem>
                     <SelectItem value="operateur">Opérateur — lecture seule + saisie</SelectItem>
                   </SelectContent>
                 </Select>

@@ -3,11 +3,20 @@
 import Link from "next/link";
 import Icon from "@/components/ui/Icon";
 import { useSaveToast } from "@/lib/useSaveToast";
+import { useToast } from "@/components/ui/Toast";
+import { useApi } from "@/lib/useApi";
+import { api } from "@/lib/api";
 import DatePicker from "@/components/ui/DatePicker";
 import { useState } from "react";
+import type { Animal, StockArticle } from "@/lib/types";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
+
+const TYPE_MAP: Record<string, string> = {
+  antibiotique: "Antibiotique", antiparasitaire: "Antiparasitaire",
+  "anti-inflammatoire": "Anti-inflammatoire", vaccin: "Vaccin", autre: "Autre",
+};
 
 function FormField({ label, children, hint }: { label: string; children: React.ReactNode; hint?: string }) {
   return (
@@ -22,16 +31,49 @@ function FormField({ label, children, hint }: { label: string; children: React.R
 const inputCls = "h-10 w-full rounded-[6px] border border-border bg-card px-3 font-inter text-[13px] text-label placeholder:text-placeholder transition-colors focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary";
 
 export default function NouveauTraitementPage() {
+  const { data: animaux } = useApi<Animal[]>("/animaux");
+  const { data: articles } = useApi<StockArticle[]>("/stocks");
+  const medicaments = (articles ?? []).filter((a) => a.categorie === "Médicaments");
+
   const [dateDebut, setDateDebut] = useState<Date | undefined>(new Date());
   const [dateFin, setDateFin] = useState<Date | undefined>();
   const [doseUnite, setDoseUnite] = useState("ml");
+  const [animalId, setAnimalId] = useState("");
+  const [type, setType] = useState("");
+  const [articleId, setArticleId] = useState("");
+  const [voie, setVoie] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
   const notifySaved = useSaveToast();
+  const { error: toastError } = useToast();
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    // TODO: POST /api/sante/traitements
-    notifySaved("Traitement enregistré — stock médicament déduit", "/sante");
+    const fd = new FormData(e.currentTarget as HTMLFormElement);
+    if (!animalId) return toastError("Sélectionnez un animal");
+    if (!type) return toastError("Sélectionnez un type de traitement");
+    const produitArticle = medicaments.find((m) => m.id === articleId);
+    setSubmitting(true);
+    try {
+      await api.post("/sante/traitements", {
+        animal: animalId,
+        type: TYPE_MAP[type],
+        produit: produitArticle?.designation || "Produit",
+        article: articleId || null,
+        dose: Number(fd.get("dose")) || 0,
+        doseUnite,
+        voie,
+        dateDebut: dateDebut ?? new Date(),
+        dateFin: dateFin ?? null,
+        veterinaire: String(fd.get("veterinaire") || ""),
+        delaiRetrait: Number(fd.get("delaiRetrait")) || 0,
+        observations: String(fd.get("observations") || ""),
+      });
+      notifySaved("Traitement enregistré — stock médicament déduit", "/sante");
+    } catch (err) {
+      toastError(err instanceof Error ? err.message : "Erreur");
+      setSubmitting(false);
+    }
   }
 
   return (
@@ -62,20 +104,17 @@ export default function NouveauTraitementPage() {
             <div className="mt-6 flex flex-col gap-4">
               <div className="flex gap-4">
                 <FormField label="Animal concerné *">
-                  <Select name="animalId">
+                  <Select value={animalId} onValueChange={(v) => setAnimalId(v ?? "")}>
                     <SelectTrigger className="h-10 w-full rounded-[6px] border border-border bg-card">
                       <SelectValue placeholder="Rechercher un animal…" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="ani-001">ANI-001 — Holstein</SelectItem>
-                      <SelectItem value="ani-012">ANI-012 — Holstein</SelectItem>
-                      <SelectItem value="ani-031">ANI-031 — Angus</SelectItem>
-                      <SelectItem value="ani-047">ANI-047 — Limousin</SelectItem>
+                      {(animaux ?? []).map((a) => <SelectItem key={a.id} value={a.id}>{a.identifiant} — {a.race?.nom}</SelectItem>)}
                     </SelectContent>
                   </Select>
                 </FormField>
                 <FormField label="Type de traitement *">
-                  <Select name="type">
+                  <Select value={type} onValueChange={(v) => setType(v ?? "")}>
                     <SelectTrigger className="h-10 w-full rounded-[6px] border border-border bg-card">
                       <SelectValue placeholder="Sélectionner" />
                     </SelectTrigger>
@@ -92,16 +131,12 @@ export default function NouveauTraitementPage() {
 
               <div className="flex gap-4">
                 <FormField label="Produit (médicament en stock) *" hint="Le stock du produit sera déduit automatiquement">
-                  <Select name="produit">
+                  <Select value={articleId} onValueChange={(v) => setArticleId(v ?? "")}>
                     <SelectTrigger className="h-10 w-full rounded-[6px] border border-border bg-card">
                       <SelectValue placeholder="Sélectionner un médicament" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="amoxicilline">Amoxicilline — 240 ml en stock</SelectItem>
-                      <SelectItem value="ivermectine">Ivermectine — 12 doses en stock</SelectItem>
-                      <SelectItem value="meloxicam">Méloxicam — 80 ml en stock</SelectItem>
-                      <SelectItem value="penicilline">Pénicilline — 150 ml en stock</SelectItem>
-                      <SelectItem value="vaccin-bvdv">Vaccin BVDV — 25 doses en stock</SelectItem>
+                      {medicaments.map((m) => <SelectItem key={m.id} value={m.id}>{m.designation} — {m.quantite} {m.unite} en stock</SelectItem>)}
                     </SelectContent>
                   </Select>
                 </FormField>
@@ -126,7 +161,7 @@ export default function NouveauTraitementPage() {
 
               <div className="flex gap-4">
                 <FormField label="Voie d'administration">
-                  <Select name="voie">
+                  <Select value={voie} onValueChange={(v) => setVoie(v ?? "")}>
                     <SelectTrigger className="h-10 w-full rounded-[6px] border border-border bg-card">
                       <SelectValue placeholder="Sélectionner" />
                     </SelectTrigger>

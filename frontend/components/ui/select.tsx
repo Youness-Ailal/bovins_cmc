@@ -6,7 +6,48 @@ import { Select as SelectPrimitive } from "@base-ui/react/select"
 import { cn } from "@/lib/utils"
 import { ChevronDownIcon, CheckIcon, ChevronUpIcon } from "lucide-react"
 
-const Select = SelectPrimitive.Root
+// Walk the children tree and collect { value -> label } pairs from <SelectItem>.
+// base-ui's <Select.Value> only renders the selected item's label when the Root
+// receives an `items` map; otherwise it shows the raw value (e.g. an id).
+function collectItems(children: React.ReactNode): Record<string, React.ReactNode> {
+  const map: Record<string, React.ReactNode> = {}
+  const walk = (node: React.ReactNode) => {
+    React.Children.forEach(node, (child) => {
+      if (!React.isValidElement(child)) return
+      const props = child.props as { value?: unknown; children?: React.ReactNode }
+      if (props && props.value != null && typeof props.value !== "object") {
+        map[String(props.value)] = props.children
+      }
+      if (props && props.children) walk(props.children)
+    })
+  }
+  walk(children)
+  return map
+}
+
+interface SelectProps {
+  children?: React.ReactNode
+  items?: Record<string, React.ReactNode>
+  value?: string
+  defaultValue?: string
+  onValueChange?: (value: string | null, eventDetails?: unknown) => void
+  name?: string
+  disabled?: boolean
+  required?: boolean
+}
+
+// Cast Root to a loose component so our string-typed props are preserved at
+// call sites (base-ui's generic would otherwise widen the value type to `{}`).
+const Root = SelectPrimitive.Root as unknown as React.FC<Record<string, unknown>>
+
+function Select({ children, items, ...props }: SelectProps) {
+  const derived = React.useMemo(() => items ?? collectItems(children), [items, children])
+  return (
+    <Root items={derived} {...props}>
+      {children}
+    </Root>
+  )
+}
 
 function SelectGroup({ className, ...props }: SelectPrimitive.Group.Props) {
   return (

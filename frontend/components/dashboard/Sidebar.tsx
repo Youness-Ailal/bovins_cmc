@@ -4,6 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import Icon from "@/components/ui/Icon";
+import { useAuth } from "@/lib/auth";
 
 const NAV = [
   { href: "/dashboard", icon: "layout-dashboard", label: "Tableau de bord", match: ["/dashboard"] },
@@ -18,10 +19,15 @@ const NAV = [
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const { user, logout } = useAuth();
 
   function isActive(match: string[]) {
     return match.some((m) => pathname.startsWith(m));
   }
+
+  const initials = user
+    ? `${user.prenom?.[0] ?? ""}${user.nom?.[0] ?? ""}`.toUpperCase()
+    : "—";
 
   return (
     <aside className="flex h-full w-[260px] shrink-0 flex-col bg-sidebar py-6 px-5">
@@ -60,13 +66,15 @@ export default function Sidebar() {
       {/* User section */}
       <div className="flex items-center gap-2.5 border-t border-[#264A2E] pt-4">
         <div className="flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-full bg-primary font-dm-sans text-xs font-semibold text-white">
-          YB
+          {initials}
         </div>
         <div className="flex min-w-0 flex-col gap-0.5">
-          <span className="font-inter text-[13px] font-semibold text-white">Youness B.</span>
-          <span className="font-inter text-[11px] text-sidebar-text">Responsable ferme</span>
+          <span className="font-inter text-[13px] font-semibold text-white truncate">
+            {user ? `${user.prenom} ${user.nom}` : "—"}
+          </span>
+          <span className="font-inter text-[11px] text-sidebar-text">{user?.role ?? ""}</span>
         </div>
-        <button className="ml-auto text-sidebar-text hover:text-white transition-colors">
+        <button onClick={logout} title="Déconnexion" className="ml-auto text-sidebar-text hover:text-white transition-colors">
           <Icon name="log-out" size={18} />
         </button>
       </div>

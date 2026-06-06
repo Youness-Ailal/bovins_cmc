@@ -4,6 +4,8 @@ import { use, useState } from "react";
 import Link from "next/link";
 import Icon from "@/components/ui/Icon";
 import { useSaveToast } from "@/lib/useSaveToast";
+import { useToast } from "@/components/ui/Toast";
+import { api } from "@/lib/api";
 import DatePicker from "@/components/ui/DatePicker";
 
 type Motif = "vente" | "abattage" | "mort";
@@ -18,13 +20,28 @@ export default function SortieAnimalPage({ params }: { params: Promise<{ id: str
   const { id } = use(params);
   const [motif, setMotif] = useState<Motif>("vente");
   const [dateSortie, setDateSortie] = useState<Date | undefined>(new Date());
+  const [submitting, setSubmitting] = useState(false);
 
   const notifySaved = useSaveToast();
+  const { error: toastError } = useToast();
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    // TODO: POST /api/animaux/:id/sortie
-    notifySaved("Sortie enregistrée — fiche clôturée", "/animaux");
+    const fd = new FormData(e.currentTarget as HTMLFormElement);
+    setSubmitting(true);
+    try {
+      await api.post(`/animaux/${id}/sortie`, {
+        motif,
+        date: dateSortie ?? new Date(),
+        poids: Number(fd.get("poidsFinal")) || 0,
+        prix: Number(fd.get("prixVente")) || 0,
+        notes: String(fd.get("notes") || ""),
+      });
+      notifySaved("Sortie enregistrée — fiche clôturée", "/animaux");
+    } catch (err) {
+      toastError(err instanceof Error ? err.message : "Erreur");
+      setSubmitting(false);
+    }
   }
 
   return (

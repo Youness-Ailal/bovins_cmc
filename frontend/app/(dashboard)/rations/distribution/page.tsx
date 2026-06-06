@@ -3,8 +3,12 @@
 import Link from "next/link";
 import Icon from "@/components/ui/Icon";
 import { useSaveToast } from "@/lib/useSaveToast";
+import { useToast } from "@/components/ui/Toast";
+import { useApi } from "@/lib/useApi";
+import { api } from "@/lib/api";
 import DatePicker from "@/components/ui/DatePicker";
 import { useState } from "react";
+import type { Ration, Parcelle, Lot } from "@/lib/types";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
@@ -19,14 +23,36 @@ function FormField({ label, children }: { label: string; children: React.ReactNo
 }
 
 export default function DistributionRationPage() {
+  const { data: rations } = useApi<Ration[]>("/rations");
+  const { data: parcelles } = useApi<Parcelle[]>("/parcelles");
+  const { data: lots } = useApi<Lot[]>("/lots");
   const [date, setDate] = useState<Date | undefined>(new Date());
+  const [rationId, setRationId] = useState("");
+  const [cible, setCible] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
   const notifySaved = useSaveToast();
+  const { error: toastError } = useToast();
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    // TODO: POST /api/rations/distributions
-    notifySaved("Distribution enregistrée — stock déduit", "/rations");
+    const fd = new FormData(e.currentTarget as HTMLFormElement);
+    if (!rationId) return toastError("Sélectionnez une ration");
+    setSubmitting(true);
+    try {
+      await api.post("/rations/distributions", {
+        ration: rationId,
+        cible,
+        date: date ?? new Date(),
+        quantite: Number(fd.get("quantite")) || 0,
+        nbAnimaux: Number(fd.get("nbAnimaux")) || 0,
+        notes: String(fd.get("notes") || ""),
+      });
+      notifySaved("Distribution enregistrée — stock déduit", "/rations");
+    } catch (err) {
+      toastError(err instanceof Error ? err.message : "Erreur");
+      setSubmitting(false);
+    }
   }
 
   return (
@@ -56,29 +82,25 @@ export default function DistributionRationPage() {
 
             <div className="mt-6 flex flex-col gap-4">
               <FormField label="Ration distribuée *">
-                <Select name="rationId">
+                <Select value={rationId} onValueChange={(v) => setRationId(v ?? "")}>
                   <SelectTrigger className="h-10 w-full rounded-[6px] border border-border bg-card">
                     <SelectValue placeholder="Sélectionner une ration" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="rat-001">RAT-001 — Ration Bovins Adultes</SelectItem>
-                    <SelectItem value="rat-002">RAT-002 — Ration Veaux</SelectItem>
-                    <SelectItem value="rat-003">RAT-003 — Ration Finition</SelectItem>
+                    {(rations ?? []).map((r) => <SelectItem key={r.id} value={r.id}>{r.nom}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </FormField>
 
               <div className="flex gap-4">
                 <FormField label="Cible (Parcelle ou Lot) *">
-                  <Select name="cibleId">
+                  <Select value={cible} onValueChange={(v) => setCible(v ?? "")}>
                     <SelectTrigger className="h-10 w-full rounded-[6px] border border-border bg-card">
                       <SelectValue placeholder="Sélectionner" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="parcelle-alpha">Parcelle Alpha (78 animaux)</SelectItem>
-                      <SelectItem value="parcelle-beta">Parcelle Beta (34 animaux)</SelectItem>
-                      <SelectItem value="lot-a">LOT-A (15 animaux)</SelectItem>
-                      <SelectItem value="lot-b">LOT-B (8 animaux)</SelectItem>
+                      {(parcelles ?? []).map((p) => <SelectItem key={p.id} value={p.nom}>{p.nom}</SelectItem>)}
+                      {(lots ?? []).map((l) => <SelectItem key={l.id} value={l.nom}>{l.nom}</SelectItem>)}
                     </SelectContent>
                   </Select>
                 </FormField>

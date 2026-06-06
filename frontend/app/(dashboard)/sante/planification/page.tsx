@@ -4,49 +4,25 @@ import Link from "next/link";
 import Icon from "@/components/ui/Icon";
 import DataTable, { Column } from "@/components/ui/DataTable";
 import SanteTabs from "@/components/dashboard/SanteTabs";
+import { useApi } from "@/lib/useApi";
+import { planStatutStyle } from "@/lib/statusStyles";
+import type { PlanTraitement } from "@/lib/types";
 
-interface PlanTraitement {
-  id: string;
-  animal: string;
-  type: string;
-  produit: string;
-  datePrevue: string;
-  frequence: string;
-  statut: "À faire" | "Rappel J-3" | "En retard";
+function animalCode(p: PlanTraitement): string {
+  return typeof p.animal === "object" ? (p.animal.identifiant ?? "—") : String(p.animal);
 }
 
-const PLAN: PlanTraitement[] = [
-  { id: "PLN-001", animal: "ANI-008", type: "Vaccin", produit: "FMD Vaccine", datePrevue: "10/06/2026", frequence: "Annuel", statut: "À faire" },
-  { id: "PLN-002", animal: "ANI-015", type: "Antiparasitaire", produit: "Ivermectine", datePrevue: "05/06/2026", frequence: "Trimestriel", statut: "Rappel J-3" },
-  { id: "PLN-003", animal: "ANI-003", type: "Antibiotique", produit: "Pénicilline", datePrevue: "01/06/2026", frequence: "Ponctuel", statut: "En retard" },
-];
-
-const STATUT_STYLE: Record<PlanTraitement["statut"], string> = {
-  "À faire": "bg-[#E0ECFF] text-info",
-  "Rappel J-3": "bg-[#EDE7DC] text-[#7A3F00]",
-  "En retard": "bg-[#F0E0DC] text-[#8C1C00]",
-};
-
 const COLUMNS: Column<PlanTraitement>[] = [
-  { key: "id", label: "Réf.", width: "w-[100px]", render: (r) => <span className="font-inter text-[13px] font-semibold text-label">{r.id}</span> },
-  { key: "animal", label: "Animal", width: "w-[110px]", render: (r) => <Link href={`/animaux/${r.animal}`} className="font-inter text-[13px] font-semibold text-primary hover:underline">{r.animal}</Link> },
+  { key: "animal", label: "Animal", width: "w-[120px]", render: (r) => <span className="font-inter text-[13px] font-semibold text-primary">{animalCode(r)}</span> },
   { key: "type", label: "Type", width: "w-[140px]" },
   { key: "produit", label: "Produit", width: "w-[150px]" },
-  { key: "datePrevue", label: "Date prévue", width: "w-[120px]" },
+  { key: "datePrevue", label: "Date prévue", width: "w-[120px]", render: (r) => <span className="font-inter text-[13px] text-subtle">{new Date(r.datePrevue).toLocaleDateString("fr-FR")}</span> },
   { key: "frequence", label: "Fréquence", width: "w-[120px]" },
-  { key: "statut", label: "Statut", width: "w-[120px]", render: (r) => <span className={`inline-flex rounded-full px-2.5 py-1 font-inter text-[11px] font-semibold ${STATUT_STYLE[r.statut]}`}>{r.statut}</span> },
-  {
-    key: "_actions", label: "Actions", width: "w-[70px]", align: "right",
-    render: () => (
-      <div className="flex items-center gap-2">
-        <button className="text-placeholder hover:text-primary transition-colors"><Icon name="check" size={15} /></button>
-        <button className="text-placeholder hover:text-primary transition-colors"><Icon name="pencil" size={15} /></button>
-      </div>
-    ),
-  },
+  { key: "statut", label: "Statut", width: "w-[120px]", render: (r) => <span className={`inline-flex rounded-full px-2.5 py-1 font-inter text-[11px] font-semibold ${planStatutStyle[r.statut] ?? "bg-surface text-subtle"}`}>{r.statut}</span> },
 ];
 
 export default function PlanificationPage() {
+  const { data: plans, loading, error } = useApi<PlanTraitement[]>("/sante/plans");
   return (
     <div className="flex flex-1 flex-col overflow-hidden bg-surface">
       <header className="flex h-16 shrink-0 items-center justify-between border-b border-border-light bg-card px-7">
@@ -69,12 +45,11 @@ export default function PlanificationPage() {
             <span className="font-inter text-[13px] text-subtle">Rappels automatiques envoyés à <strong className="text-label">J-3</strong> et <strong className="text-label">J-1</strong> avant chaque traitement planifié.</span>
           </div>
         </div>
-        <DataTable
-          columns={COLUMNS}
-          data={PLAN}
-          keyExtractor={(p) => p.id}
-          pagination={{ page: 1, total: 1, count: PLAN.length }}
-        />
+        {loading && <p className="font-inter text-sm text-placeholder">Chargement…</p>}
+        {error && <p className="font-inter text-sm text-danger">{error}</p>}
+        {!loading && !error && (
+          <DataTable columns={COLUMNS} data={plans ?? []} keyExtractor={(p) => p.id} pagination={{ page: 1, total: 1, count: (plans ?? []).length }} />
+        )}
       </div>
     </div>
   );

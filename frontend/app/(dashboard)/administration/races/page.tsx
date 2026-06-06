@@ -7,56 +7,47 @@ import DataTable, { Column } from "@/components/ui/DataTable";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import AdminTabs from "@/components/dashboard/AdminTabs";
 import { useToast } from "@/components/ui/Toast";
-
-interface Race {
-  id: string;
-  nom: string;
-  origine: string;
-  poidsAdulte: string;
-  gmqCible: string;
-  nbAnimaux: number;
-}
-
-const INITIAL_RACES: Race[] = [
-  { id: "RAC-001", nom: "Holstein", origine: "Europe du Nord", poidsAdulte: "650 kg", gmqCible: "1.40 kg/j", nbAnimaux: 52 },
-  { id: "RAC-002", nom: "Angus", origine: "Écosse", poidsAdulte: "600 kg", gmqCible: "1.35 kg/j", nbAnimaux: 48 },
-  { id: "RAC-003", nom: "Limousin", origine: "France", poidsAdulte: "700 kg", gmqCible: "1.50 kg/j", nbAnimaux: 32 },
-  { id: "RAC-004", nom: "Charolais", origine: "France", poidsAdulte: "850 kg", gmqCible: "1.60 kg/j", nbAnimaux: 15 },
-];
+import { useApi } from "@/lib/useApi";
+import { api } from "@/lib/api";
+import type { Race } from "@/lib/types";
 
 export default function RacesPage() {
-  const { success, error } = useToast();
-  const [races, setRaces] = useState<Race[]>(INITIAL_RACES);
+  const { success, error: toastError } = useToast();
+  const { data: races, loading, error, refetch } = useApi<Race[]>("/races");
   const [toDelete, setToDelete] = useState<Race | null>(null);
 
   function requestDelete(race: Race) {
-    if (race.nbAnimaux > 0) {
-      // Cannot delete a race still linked to animals
-      error(`Impossible : ${race.nbAnimaux} animaux sont liés à la race ${race.nom}`);
+    if ((race.nbAnimaux ?? 0) > 0) {
+      toastError(`Impossible : ${race.nbAnimaux} animaux sont liés à la race ${race.nom}`);
       return;
     }
     setToDelete(race);
   }
 
-  function confirmDelete() {
+  async function confirmDelete() {
     if (!toDelete) return;
-    // TODO: DELETE /api/races/:id
-    setRaces((prev) => prev.filter((r) => r.id !== toDelete.id));
-    success(`Race « ${toDelete.nom} » supprimée`);
-    setToDelete(null);
+    try {
+      await api.del(`/races/${toDelete.id}`);
+      success(`Race « ${toDelete.nom} » supprimée`);
+      refetch();
+    } catch (err) {
+      toastError(err instanceof Error ? err.message : "Erreur");
+    } finally {
+      setToDelete(null);
+    }
   }
 
   const COLUMNS: Column<Race>[] = [
-    { key: "id", label: "Réf.", width: "w-[100px]", render: (r) => <span className="font-inter text-[13px] font-semibold text-label">{r.id}</span> },
     { key: "nom", label: "Race", width: "w-[150px]", render: (r) => <span className="font-inter text-[13px] font-semibold text-label">{r.nom}</span> },
-    { key: "origine", label: "Origine", width: "w-[160px]" },
-    { key: "poidsAdulte", label: "Poids adulte", width: "w-[120px]" },
-    { key: "gmqCible", label: "GMQ cible", width: "w-[120px]" },
-    { key: "nbAnimaux", label: "Animaux", width: "w-[90px]", render: (r) => <span className="font-inter text-[13px] text-subtle">{r.nbAnimaux}</span> },
+    { key: "origine", label: "Origine", width: "w-[160px]", render: (r) => <span className="font-inter text-[13px] text-subtle">{r.origine || "—"}</span> },
+    { key: "poidsAdulte", label: "Poids adulte", width: "w-[120px]", render: (r) => <span className="font-inter text-[13px] text-subtle">{r.poidsAdulte} kg</span> },
+    { key: "gmqCible", label: "GMQ cible", width: "w-[120px]", render: (r) => <span className="font-inter text-[13px] text-subtle">{r.gmqCible} kg/j</span> },
+    { key: "poidsAbattage", label: "Poids abattage", width: "w-[130px]", render: (r) => <span className="font-inter text-[13px] text-subtle">{r.poidsAbattage} kg</span> },
+    { key: "nbAnimaux", label: "Animaux", width: "w-[90px]", render: (r) => <span className="font-inter text-[13px] text-subtle">{r.nbAnimaux ?? 0}</span> },
     {
       key: "_actions", label: "Actions", width: "w-[70px]", align: "right",
       render: (r) => (
-        <div className="flex items-center gap-3">
+        <div className="flex items-center justify-end gap-3">
           <Link href={`/administration/races/${r.id}`} className="text-placeholder hover:text-primary transition-colors"><Icon name="pencil" size={15} /></Link>
           <button onClick={() => requestDelete(r)} title="Supprimer" className="text-placeholder hover:text-danger transition-colors"><Icon name="x" size={15} /></button>
         </div>
@@ -80,12 +71,11 @@ export default function RacesPage() {
       <AdminTabs />
 
       <div className="flex flex-1 flex-col gap-4 overflow-auto p-6">
-        <DataTable
-          columns={COLUMNS}
-          data={races}
-          keyExtractor={(r) => r.id}
-          pagination={{ page: 1, total: 1, count: races.length }}
-        />
+        {loading && <p className="font-inter text-sm text-placeholder">Chargement…</p>}
+        {error && <p className="font-inter text-sm text-danger">{error}</p>}
+        {!loading && !error && (
+          <DataTable columns={COLUMNS} data={races ?? []} keyExtractor={(r) => r.id} pagination={{ page: 1, total: 1, count: (races ?? []).length }} />
+        )}
       </div>
 
       <ConfirmDialog

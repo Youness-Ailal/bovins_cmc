@@ -8,62 +8,51 @@ import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import AdminTabs from "@/components/dashboard/AdminTabs";
 import { useToast } from "@/components/ui/Toast";
 import { userRoleStyle } from "@/lib/statusStyles";
-
-interface Utilisateur {
-  id: string;
-  nom: string;
-  email: string;
-  role: "Admin" | "Responsable" | "Opérateur";
-  statut: "Actif" | "Inactif";
-  derniereConnexion: string;
-}
-
-const INITIAL_UTILISATEURS: Utilisateur[] = [
-  { id: "USR-001", nom: "Youness Ailal", email: "youness@bovitrack.ma", role: "Admin", statut: "Actif", derniereConnexion: "02/06/2026" },
-  { id: "USR-002", nom: "Salma Benali", email: "salma@bovitrack.ma", role: "Responsable", statut: "Actif", derniereConnexion: "01/06/2026" },
-  { id: "USR-003", nom: "Mohamed Ouali", email: "mohamed@bovitrack.ma", role: "Opérateur", statut: "Actif", derniereConnexion: "31/05/2026" },
-  { id: "USR-004", nom: "Hajar Idrissi", email: "hajar@bovitrack.ma", role: "Opérateur", statut: "Inactif", derniereConnexion: "15/04/2026" },
-];
+import { useApi } from "@/lib/useApi";
+import { api } from "@/lib/api";
+import type { User } from "@/lib/types";
 
 const ROLE_STYLE = userRoleStyle;
 
 export default function AdministrationPage() {
-  const { success } = useToast();
-  const [utilisateurs, setUtilisateurs] = useState<Utilisateur[]>(INITIAL_UTILISATEURS);
-  const [toDelete, setToDelete] = useState<Utilisateur | null>(null);
+  const { success, error: toastError } = useToast();
+  const { data: utilisateurs, loading, error, refetch } = useApi<User[]>("/users");
+  const [toDelete, setToDelete] = useState<User | null>(null);
 
-  function confirmDelete() {
+  async function confirmDelete() {
     if (!toDelete) return;
-    // TODO: DELETE /api/utilisateurs/:id
-    setUtilisateurs((prev) => prev.filter((u) => u.id !== toDelete.id));
-    success(`Utilisateur « ${toDelete.nom} » désactivé`);
-    setToDelete(null);
+    try {
+      await api.del(`/users/${toDelete.id}`);
+      success(`Utilisateur « ${toDelete.prenom} ${toDelete.nom} » désactivé`);
+      refetch();
+    } catch (err) {
+      toastError(err instanceof Error ? err.message : "Erreur");
+    } finally {
+      setToDelete(null);
+    }
   }
 
-  const COLUMNS: Column<Utilisateur>[] = [
-    { key: "id", label: "ID", width: "w-[100px]", render: (r) => <span className="font-inter text-[13px] font-semibold text-label">{r.id}</span> },
+  const COLUMNS: Column<User>[] = [
     {
-      key: "nom",
-      label: "Nom",
-      width: "w-[180px]",
+      key: "nom", label: "Nom", width: "w-[200px]",
       render: (r) => (
         <div className="flex items-center gap-2.5">
           <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary font-dm-sans text-[11px] font-bold text-white">
-            {r.nom.split(" ").map((n) => n[0]).join("").slice(0, 2)}
+            {`${r.prenom?.[0] ?? ""}${r.nom?.[0] ?? ""}`.toUpperCase()}
           </div>
-          <span className="font-inter text-[13px] font-medium text-label">{r.nom}</span>
+          <span className="font-inter text-[13px] font-medium text-label">{r.prenom} {r.nom}</span>
         </div>
       ),
     },
-    { key: "email", label: "Email", width: "w-[220px]", render: (r) => <span className="font-inter text-[13px] text-subtle">{r.email}</span> },
-    { key: "role", label: "Rôle", width: "w-[120px]", render: (r) => <span className={`inline-flex rounded-full px-2.5 py-1 font-inter text-[11px] font-semibold ${ROLE_STYLE[r.role]}`}>{r.role}</span> },
+    { key: "email", label: "Email", width: "w-[230px]", render: (r) => <span className="font-inter text-[13px] text-subtle">{r.email}</span> },
+    { key: "role", label: "Rôle", width: "w-[140px]", render: (r) => <span className={`inline-flex rounded-full px-2.5 py-1 font-inter text-[11px] font-semibold ${ROLE_STYLE[r.role] ?? "bg-surface text-subtle"}`}>{r.role}</span> },
     { key: "statut", label: "Statut", width: "w-[90px]", render: (r) => <span className={`inline-flex rounded-full px-2.5 py-1 font-inter text-[11px] font-semibold ${r.statut === "Actif" ? "bg-success/10 text-success" : "bg-surface text-subtle"}`}>{r.statut}</span> },
-    { key: "derniereConnexion", label: "Dernière connexion", width: "w-[160px]" },
+    { key: "derniereConnexion", label: "Dernière connexion", width: "w-[160px]", render: (r) => <span className="font-inter text-[13px] text-subtle">{r.derniereConnexion ? new Date(r.derniereConnexion).toLocaleDateString("fr-FR") : "—"}</span> },
     {
       key: "_actions", label: "Actions", width: "w-[70px]", align: "right",
       render: (r) => (
-        <div className="flex items-center gap-3">
-          <Link href={`/administration/utilisateurs/${encodeURIComponent(r.id)}`} className="text-placeholder hover:text-primary transition-colors"><Icon name="pencil" size={15} /></Link>
+        <div className="flex items-center justify-end gap-3">
+          <Link href={`/administration/utilisateurs/${r.id}`} className="text-placeholder hover:text-primary transition-colors"><Icon name="pencil" size={15} /></Link>
           <button onClick={() => setToDelete(r)} title="Désactiver" className="text-placeholder hover:text-danger transition-colors"><Icon name="x" size={15} /></button>
         </div>
       ),
@@ -86,13 +75,17 @@ export default function AdministrationPage() {
       <AdminTabs />
 
       <div className="flex flex-1 flex-col gap-4 overflow-auto p-6">
-        <DataTable columns={COLUMNS} data={utilisateurs} keyExtractor={(u) => u.id} pagination={{ page: 1, total: 1, count: utilisateurs.length }} />
+        {loading && <p className="font-inter text-sm text-placeholder">Chargement…</p>}
+        {error && <p className="font-inter text-sm text-danger">{error}</p>}
+        {!loading && !error && (
+          <DataTable columns={COLUMNS} data={utilisateurs ?? []} keyExtractor={(u) => u.id} pagination={{ page: 1, total: 1, count: (utilisateurs ?? []).length }} />
+        )}
       </div>
 
       <ConfirmDialog
         open={toDelete !== null}
         title="Désactiver l'utilisateur ?"
-        message={`Le compte de « ${toDelete?.nom ?? ""} » sera désactivé et ne pourra plus se connecter.`}
+        message={`Le compte de « ${toDelete ? `${toDelete.prenom} ${toDelete.nom}` : ""} » sera désactivé et ne pourra plus se connecter.`}
         confirmLabel="Désactiver"
         onConfirm={confirmDelete}
         onCancel={() => setToDelete(null)}

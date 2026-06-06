@@ -2,15 +2,31 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import Button from "@/components/ui/button";
 import InputField from "@/components/ui/InputField";
+import { useAuth } from "@/lib/auth";
 
 export default function LoginPage() {
+  const router = useRouter();
+  const { login } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    setError(null);
+    setLoading(true);
+    try {
+      await login(email, password);
+      router.push("/dashboard");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Échec de la connexion");
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -63,12 +79,16 @@ export default function LoginPage() {
           />
         </div>
 
+        {error && (
+          <p className="rounded-[6px] bg-danger/10 px-3 py-2 font-inter text-[13px] text-danger">{error}</p>
+        )}
+
         <div className="flex flex-col gap-5 pt-1">
-          <Button type="submit" className="w-full">
-            Se connecter
+          <Button type="submit" className="w-full" disabled={loading}>
+            {loading ? "Connexion…" : "Se connecter"}
           </Button>
           <p className="font-inter text-[13px] text-subtle text-center">
-            Pas encore de compte ? Contactez votre administrateur
+            Démo : youness@bovitrack.ma / password123
           </p>
         </div>
       </form>

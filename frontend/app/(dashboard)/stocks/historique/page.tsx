@@ -4,60 +4,29 @@ import { useState } from "react";
 import Link from "next/link";
 import Icon from "@/components/ui/Icon";
 import DataTable, { Column } from "@/components/ui/DataTable";
+import { useApi } from "@/lib/useApi";
+import type { StockMouvement } from "@/lib/types";
 
-interface Mouvement {
-  id: string;
-  date: string;
-  article: string;
-  type: "Entrée" | "Sortie" | "Ajustement";
-  quantite: string;
-  utilisateur: string;
-  motif: string;
-}
+const TYPE_LABEL: Record<string, string> = { entree: "Entrée", sortie: "Sortie", ajustement: "Ajustement" };
+const TYPE_COLOR: Record<string, string> = { entree: "text-success", sortie: "text-danger", ajustement: "text-subtle" };
 
-const MOUVEMENTS: Mouvement[] = [
-  { id: "MOV-041", date: "02/06/2026", article: "Orge", type: "Sortie", quantite: "-80 kg", utilisateur: "Youness B.", motif: "Distribution LOT-A" },
-  { id: "MOV-040", date: "01/06/2026", article: "Foin de luzerne", type: "Entrée", quantite: "+500 kg", utilisateur: "Admin", motif: "Livraison fournisseur" },
-  { id: "MOV-039", date: "01/06/2026", article: "Tourteau de soja", type: "Sortie", quantite: "-55 kg", utilisateur: "Youness B.", motif: "Distribution LOT-B" },
-  { id: "MOV-038", date: "31/05/2026", article: "Minéraux bovins", type: "Ajustement", quantite: "-5 kg", utilisateur: "Admin", motif: "Correction inventaire" },
-  { id: "MOV-037", date: "30/05/2026", article: "Mélasse", type: "Entrée", quantite: "+60 L", utilisateur: "Admin", motif: "Livraison fournisseur" },
-];
-
-const TYPE_COLOR: Record<Mouvement["type"], string> = {
-  Entrée: "text-success font-semibold",
-  Sortie: "text-danger font-semibold",
-  Ajustement: "text-subtle",
-};
-
-const COLUMNS: Column<Mouvement>[] = [
-  { key: "id", label: "Réf.", width: "w-[100px]", render: (r) => <span className="font-inter text-[13px] font-semibold text-label">{r.id}</span> },
-  { key: "date", label: "Date", width: "w-[110px]" },
-  { key: "article", label: "Article", width: "w-[160px]" },
+const COLUMNS: Column<StockMouvement>[] = [
+  { key: "date", label: "Date", width: "w-[120px]", render: (r) => <span className="font-inter text-[13px] text-subtle">{new Date(r.date).toLocaleDateString("fr-FR")}</span> },
+  { key: "article", label: "Article", width: "w-[180px]", render: (r) => <span className="font-inter text-[13px] font-semibold text-label">{r.article?.designation ?? "—"}</span> },
+  { key: "type", label: "Type", width: "w-[110px]", render: (r) => <span className={`font-inter text-[13px] font-semibold ${TYPE_COLOR[r.type]}`}>{TYPE_LABEL[r.type]}</span> },
   {
-    key: "type",
-    label: "Type",
-    width: "w-[110px]",
-    render: (r) => <span className={`font-inter text-[13px] ${TYPE_COLOR[r.type]}`}>{r.type}</span>,
+    key: "quantite", label: "Quantité", width: "w-[110px]",
+    render: (r) => <span className={`font-inter text-[13px] font-semibold ${TYPE_COLOR[r.type]}`}>{r.type === "entree" ? "+" : r.type === "sortie" ? "-" : "→"}{r.quantite} {r.article?.unite ?? ""}</span>,
   },
-  {
-    key: "quantite",
-    label: "Quantité",
-    width: "w-[100px]",
-    render: (r) => (
-      <span className={`font-inter text-[13px] font-semibold ${r.type === "Entrée" ? "text-success" : r.type === "Sortie" ? "text-danger" : "text-subtle"}`}>
-        {r.quantite}
-      </span>
-    ),
-  },
-  { key: "utilisateur", label: "Utilisateur", width: "w-[140px]" },
-  { key: "motif", label: "Motif", width: "w-[200px]", render: (r) => <span className="font-inter text-[13px] text-subtle">{r.motif}</span> },
+  { key: "quantiteApres", label: "Stock après", width: "w-[110px]", render: (r) => <span className="font-inter text-[13px] text-subtle">{r.quantiteApres} {r.article?.unite ?? ""}</span> },
+  { key: "utilisateur", label: "Utilisateur", width: "w-[140px]", render: (r) => <span className="font-inter text-[13px] text-subtle">{r.utilisateur ? `${r.utilisateur.prenom ?? ""} ${r.utilisateur.nom ?? ""}`.trim() : "—"}</span> },
+  { key: "motif", label: "Motif", width: "w-[200px]", render: (r) => <span className="font-inter text-[13px] text-subtle">{r.motif || "—"}</span> },
 ];
 
 export default function HistoriqueStocksPage() {
+  const { data: mouvements, loading, error } = useApi<StockMouvement[]>("/stocks/mouvements");
   const [search, setSearch] = useState("");
-  const filtered = MOUVEMENTS.filter((m) =>
-    m.article.toLowerCase().includes(search.toLowerCase()) || m.motif.toLowerCase().includes(search.toLowerCase())
-  );
+  const filtered = (mouvements ?? []).filter((m) => (m.article?.designation ?? "").toLowerCase().includes(search.toLowerCase()) || (m.motif ?? "").toLowerCase().includes(search.toLowerCase()));
 
   return (
     <div className="flex flex-1 flex-col overflow-hidden bg-surface">
@@ -78,19 +47,12 @@ export default function HistoriqueStocksPage() {
             <Icon name="search" size={14} className="text-placeholder" />
             <input type="text" placeholder="Rechercher…" value={search} onChange={(e) => setSearch(e.target.value)} className="w-44 bg-transparent font-inter text-[13px] text-label placeholder:text-placeholder focus:outline-none" />
           </div>
-          {["Type", "Article", "Période"].map((f) => (
-            <button key={f} className="flex items-center gap-1 rounded-[6px] border border-border-light px-2.5 py-1.5 font-inter text-[13px] text-subtle hover:bg-surface transition-colors">
-              {f}<Icon name="chevron-down" size={12} className="text-placeholder" />
-            </button>
-          ))}
         </div>
-
-        <DataTable
-          columns={COLUMNS}
-          data={filtered}
-          keyExtractor={(m) => m.id}
-          pagination={{ page: 1, total: 5, count: 41 }}
-        />
+        {loading && <p className="font-inter text-sm text-placeholder">Chargement…</p>}
+        {error && <p className="font-inter text-sm text-danger">{error}</p>}
+        {!loading && !error && (
+          <DataTable columns={COLUMNS} data={filtered} keyExtractor={(m) => m.id} pagination={{ page: 1, total: 1, count: (mouvements ?? []).length }} />
+        )}
       </div>
     </div>
   );

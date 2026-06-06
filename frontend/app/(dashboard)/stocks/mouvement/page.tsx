@@ -4,32 +4,31 @@ import { useState } from "react";
 import Link from "next/link";
 import Icon from "@/components/ui/Icon";
 import { useSaveToast } from "@/lib/useSaveToast";
+import { useToast } from "@/components/ui/Toast";
+import { useApi } from "@/lib/useApi";
+import { api } from "@/lib/api";
 import DatePicker from "@/components/ui/DatePicker";
+import type { StockArticle } from "@/lib/types";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 
 // UC-08 — Réapprovisionner / enregistrer un mouvement de stock
-// TODO: POST /api/stocks/mouvements
 
 type TypeMouvement = "entree" | "sortie" | "ajustement";
 
-const ARTICLES = [
-  { id: "s1", nom: "Orge", unite: "kg", qteActuelle: 120 },
-  { id: "s2", nom: "Maïs concassé", unite: "kg", qteActuelle: 320 },
-  { id: "s3", nom: "Foin de luzerne", unite: "kg", qteActuelle: 890 },
-  { id: "s4", nom: "Tourteau de soja", unite: "kg", qteActuelle: 45 },
-  { id: "s5", nom: "Minéraux bovins", unite: "kg", qteActuelle: 30 },
-  { id: "s6", nom: "Ivermectine", unite: "doses", qteActuelle: 12 },
-];
-
 export default function MouvementStockPage() {
+  const { data: articlesData } = useApi<StockArticle[]>("/stocks");
+  const articles = (articlesData ?? []).map((a) => ({ id: a.id, nom: a.designation, unite: a.unite, qteActuelle: a.quantite }));
+
   const [type, setType] = useState<TypeMouvement>("entree");
   const [articleId, setArticleId] = useState("");
   const [quantite, setQuantite] = useState("");
   const [date, setDate] = useState<Date | undefined>(new Date());
+  const [motif, setMotif] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
-  const article = ARTICLES.find((a) => a.id === articleId);
+  const article = articles.find((a) => a.id === articleId);
   const qteApres = article && quantite
     ? type === "entree"
       ? article.qteActuelle + parseFloat(quantite)
@@ -39,11 +38,20 @@ export default function MouvementStockPage() {
     : null;
 
   const notifySaved = useSaveToast();
+  const { error: toastError } = useToast();
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    // TODO: POST /api/stocks/mouvements { type, articleId, quantite, date, motif }
-    notifySaved("Mouvement de stock enregistré", "/stocks");
+    if (!articleId) return toastError("Sélectionnez un article");
+    if (!quantite) return toastError("La quantité est requise");
+    setSubmitting(true);
+    try {
+      await api.post("/stocks/mouvements", { article: articleId, type, quantite: Number(quantite), date: date ?? new Date(), motif });
+      notifySaved("Mouvement de stock enregistré", "/stocks");
+    } catch (err) {
+      toastError(err instanceof Error ? err.message : "Erreur");
+      setSubmitting(false);
+    }
   }
 
   return (
@@ -105,7 +113,7 @@ export default function MouvementStockPage() {
                       <SelectValue placeholder="Sélectionner un article" />
                     </SelectTrigger>
                     <SelectContent>
-                      {ARTICLES.map((a) => (
+                      {articles.map((a) => (
                         <SelectItem key={a.id} value={a.id}>
                           {a.nom} — {a.qteActuelle} {a.unite} disponibles
                         </SelectItem>
@@ -177,7 +185,7 @@ export default function MouvementStockPage() {
 
               <div className="flex flex-col gap-1.5">
                 <label className="font-inter text-xs font-medium text-label">Motif / Référence</label>
-                <input type="text" name="motif" placeholder="Ex: Distribution LOT-A · Réf. BL-2026-0041" className="h-10 w-full rounded-[6px] border border-border bg-card px-3 font-inter text-[13px] text-label placeholder:text-placeholder focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary" />
+                <input type="text" value={motif} onChange={(e) => setMotif(e.target.value)} placeholder="Ex: Distribution LOT-A · Réf. BL-2026-0041" className="h-10 w-full rounded-[6px] border border-border bg-card px-3 font-inter text-[13px] text-label placeholder:text-placeholder focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary" />
               </div>
 
               <div className="flex flex-col gap-1.5">

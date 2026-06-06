@@ -1,11 +1,16 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import Icon from "@/components/ui/Icon";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { useSaveToast } from "@/lib/useSaveToast";
+import { useToast } from "@/components/ui/Toast";
+import { useApi } from "@/lib/useApi";
+import { api } from "@/lib/api";
+import type { Ration } from "@/lib/types";
 
 function FormField({ label, children, hint }: { label: string; children: React.ReactNode; hint?: string }) {
   return (
@@ -21,11 +26,33 @@ const inputCls = "h-10 w-full rounded-[6px] border border-border bg-card px-3 fo
 
 export default function NouvelleParcellePage() {
   const notifySaved = useSaveToast();
+  const { error: toastError } = useToast();
+  const { data: rations } = useApi<Ration[]>("/rations");
+  const [type, setType] = useState("");
+  const [ration, setRation] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    // TODO: POST /api/parcelles
-    notifySaved("Parcelle créée avec succès", "/parcelles");
+    const fd = new FormData(e.currentTarget as HTMLFormElement);
+    const nom = String(fd.get("nom") || "").trim();
+    if (!nom) return toastError("Le nom est requis");
+    setSubmitting(true);
+    try {
+      await api.post("/parcelles", {
+        nom,
+        reference: String(fd.get("reference") || ""),
+        capaciteMax: Number(fd.get("capacite")) || 0,
+        superficie: Number(fd.get("superficie")) || 0,
+        type,
+        ration: ration || null,
+        notes: String(fd.get("notes") || ""),
+      });
+      notifySaved("Parcelle créée avec succès", "/parcelles");
+    } catch (err) {
+      toastError(err instanceof Error ? err.message : "Erreur");
+      setSubmitting(false);
+    }
   }
 
   return (
@@ -73,7 +100,7 @@ export default function NouvelleParcellePage() {
               </div>
 
               <FormField label="Type de parcelle">
-                <Select name="type">
+                <Select value={type} onValueChange={(v) => setType(v ?? "")}>
                   <SelectTrigger className="h-10 w-full rounded-[6px] border border-border bg-card">
                     <SelectValue placeholder="Sélectionner" />
                   </SelectTrigger>
@@ -87,14 +114,12 @@ export default function NouvelleParcellePage() {
               </FormField>
 
               <FormField label="Ration assignée (optionnel)">
-                <Select name="ration">
+                <Select value={ration} onValueChange={(v) => setRation(v ?? "")}>
                   <SelectTrigger className="h-10 w-full rounded-[6px] border border-border bg-card">
                     <SelectValue placeholder="Aucune ration" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="rat-001">Ration Bovins Adultes</SelectItem>
-                    <SelectItem value="rat-002">Ration Veaux</SelectItem>
-                    <SelectItem value="rat-003">Ration Finition</SelectItem>
+                    {(rations ?? []).map((r) => <SelectItem key={r.id} value={r.id}>{r.nom}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </FormField>

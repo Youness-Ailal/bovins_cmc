@@ -1,9 +1,20 @@
-const express = require('express');
-const router = express.Router();
+const router = require('express').Router();
 
-/* GET home page. */
 router.get('/', (req, res) => {
-  res.json({ title: 'Express API', version: '1.0.0' });
+  res.json({ title: 'BOVITRACK API', version: '1.0.0', status: 'ok' });
 });
+
+router.use('/auth', require('./auth.routes'));
+router.use('/users', require('./user.routes'));
+router.use('/races', require('./race.routes'));
+router.use('/parcelles', require('./parcelle.routes'));
+router.use('/lots', require('./lot.routes'));
+router.use('/animaux', require('./animal.routes'));
+router.use('/stocks', require('./stock.routes'));
+router.use('/rations', require('./ration.routes'));
+router.use('/sante', require('./sante.routes'));
+router.use('/alertes', require('./alerte.routes'));
+router.use('/dashboard', require('./dashboard.routes'));
+router.use('/parametres', require('./parametres.routes'));
 
 module.exports = router;
