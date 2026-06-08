@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import Icon from "@/components/ui/Icon";
 import DataTable, { Column } from "@/components/ui/DataTable";
+import TableSkeleton from "@/components/ui/TableSkeleton";
 import SanteTabs from "@/components/dashboard/SanteTabs";
 import { traitementStatutStyle } from "@/lib/statusStyles";
 import { useApi } from "@/lib/useApi";
@@ -18,11 +19,16 @@ function raceName(t: Traitement): string {
 
 const COLUMNS: Column<Traitement>[] = [
   {
-    key: "animal", label: "Animal", width: "w-[140px]",
+    key: "animal", label: "Animal", width: "w-[160px]",
     render: (r) => (
-      <div className="flex flex-col">
-        <span className="font-inter text-[13px] font-semibold text-primary">{animalCode(r)}</span>
-        <span className="font-inter text-[11px] text-placeholder">{raceName(r)}</span>
+      <div className="flex items-center gap-2.5">
+        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary-light text-primary">
+          <Icon name="beef" size={14} />
+        </span>
+        <div className="flex flex-col">
+          <span className="font-inter text-[13px] font-semibold text-primary">{animalCode(r)}</span>
+          {raceName(r) && <span className="font-inter text-[11px] text-placeholder">{raceName(r)}</span>}
+        </div>
       </div>
     ),
   },
@@ -69,10 +75,10 @@ export default function SantePage() {
             <input type="text" placeholder="Animal ou produit…" value={search} onChange={(e) => setSearch(e.target.value)} className="w-44 bg-transparent font-inter text-[13px] text-label placeholder:text-placeholder focus:outline-none" />
           </div>
         </div>
-        {loading && <p className="font-inter text-sm text-placeholder">Chargement…</p>}
+        {loading && <TableSkeleton cols={[2, 2, 2, 1, 1, 1]} />}
         {error && <p className="font-inter text-sm text-danger">{error}</p>}
         {!loading && !error && (
-          <DataTable columns={COLUMNS} data={filtered} keyExtractor={(t) => t.id} pagination={{ page: 1, total: 1, count: (traitements ?? []).length }} />
+          <DataTable columns={COLUMNS} data={filtered} keyExtractor={(t) => t.id} pagination={{ page: 1, total: 1, count: (traitements ?? []).length }} empty={{ icon: "stethoscope", title: "Aucun traitement", hint: search ? "Aucun traitement ne correspond à la recherche." : "Enregistrez un traitement pour suivre la santé du troupeau." }} />
         )}
       </div>
     </div>

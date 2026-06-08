@@ -5,6 +5,7 @@ import Link from "next/link";
 import Icon from "@/components/ui/Icon";
 import Badge from "@/components/ui/Badge";
 import DataTable, { Column } from "@/components/ui/DataTable";
+import TableSkeleton from "@/components/ui/TableSkeleton";
 import { useApi } from "@/lib/useApi";
 import type { Animal, Race } from "@/lib/types";
 
@@ -24,8 +25,15 @@ const SANTE_VARIANT: Record<string, string> = {
 
 const COLUMNS: Column<Animal>[] = [
   {
-    key: "identifiant", label: "Identifiant", width: "w-[110px]",
-    render: (row) => <span className="font-inter text-[13px] font-semibold text-label">{row.identifiant}</span>,
+    key: "identifiant", label: "Identifiant", width: "w-[140px]",
+    render: (row) => (
+      <div className="flex items-center gap-2.5">
+        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary-light text-primary">
+          <Icon name="beef" size={14} />
+        </span>
+        <span className="font-inter text-[13px] font-semibold text-label">{row.identifiant}</span>
+      </div>
+    ),
   },
   { key: "race", label: "Race", width: "w-[90px]", render: (r) => <span className="font-inter text-[13px] text-subtle">{r.race?.nom ?? "—"}</span> },
   { key: "sexe", label: "Sexe", width: "w-[70px]" },
@@ -34,12 +42,19 @@ const COLUMNS: Column<Animal>[] = [
     render: (r) => <Badge variant={PHASE_VARIANT[r.phase] as Parameters<typeof Badge>[0]["variant"]}>{r.phase}</Badge>,
   },
   { key: "parcelle", label: "Parcelle", width: "w-[110px]", render: (r) => <span className="font-inter text-[13px] text-subtle">{r.parcelle?.nom ?? "—"}</span> },
-  { key: "lot", label: "Lot", width: "w-[80px]", render: (r) => <span className="font-inter text-[13px] text-subtle">{r.lot?.nom ?? "—"}</span> },
   {
     key: "etatSante", label: "Santé", width: "w-[120px]",
     render: (r) => <Badge variant={SANTE_VARIANT[r.etatSante] as Parameters<typeof Badge>[0]["variant"]}>{r.etatSante}</Badge>,
   },
-  { key: "gmqActuel", label: "GMQ", width: "w-[70px]", render: (r) => <span className="font-inter text-[13px] text-subtle">{r.gmqActuel}</span> },
+  {
+    key: "gmqActuel", label: "GMQ", width: "w-[90px]",
+    render: (r) => (
+      <span className="inline-flex items-baseline gap-1">
+        <span className={`font-inter text-[13px] font-semibold ${Number(r.gmqActuel) > 0 ? "text-success" : "text-subtle"}`}>{r.gmqActuel}</span>
+        <span className="font-inter text-[11px] text-placeholder">kg/j</span>
+      </span>
+    ),
+  },
   {
     key: "statut", label: "Statut", width: "w-[90px]",
     render: (r) => (
@@ -156,10 +171,10 @@ export default function ListeAnimauxPage() {
           <Link href="/animaux/prets-a-vendre" className="ml-auto font-inter text-[12px] text-primary hover:underline">Vue dédiée →</Link>
         </div>
 
-        {loading && <p className="font-inter text-sm text-placeholder">Chargement…</p>}
+        {loading && <TableSkeleton cols={[2, 1, 1, 2, 2, 2, 1, 2, 1]} />}
         {error && <p className="font-inter text-sm text-danger">{error}</p>}
         {!loading && !error && (
-          <DataTable columns={COLUMNS} data={filtered} keyExtractor={(a) => a.id} pagination={{ page: 1, total: 1, count: filtered.length }} />
+          <DataTable columns={COLUMNS} data={filtered} keyExtractor={(a) => a.id} pagination={{ page: 1, total: 1, count: filtered.length }} empty={{ icon: "beef", title: "Aucun animal", hint: search || Object.keys(filters).length > 0 ? "Aucun animal ne correspond aux filtres." : "Enregistrez votre premier animal pour commencer le suivi." }} />
         )}
       </div>
     </div>

@@ -1,4 +1,5 @@
 import Icon from "@/components/ui/Icon";
+import EmptyState from "@/components/ui/EmptyState";
 
 export interface Column<T> {
   key: string;
@@ -22,6 +23,7 @@ interface DataTableProps<T> {
   keyExtractor: (row: T) => string;
   pagination?: PaginationProps;
   rowHeight?: number;
+  empty?: { icon?: string; title: string; hint?: string };
 }
 
 export default function DataTable<T>({
@@ -29,16 +31,17 @@ export default function DataTable<T>({
   data,
   keyExtractor,
   pagination,
-  rowHeight = 54,
+  rowHeight = 56,
+  empty,
 }: DataTableProps<T>) {
   return (
-    <div className="overflow-hidden rounded-[10px] border border-border-light bg-card">
+    <div className="overflow-hidden rounded-[12px] border border-border-light bg-card shadow-[0_1px_2px_rgba(27,46,31,0.04)]">
       {/* Header */}
-      <div className="flex items-center justify-between bg-surface px-6" style={{ height: 40 }}>
+      <div className="flex items-center justify-between border-b border-border-light bg-surface px-6" style={{ height: 44 }}>
         {columns.map((col) => (
           <span
             key={col.key}
-            className={`${col.width} shrink-0 font-inter text-[11px] font-bold uppercase tracking-wide text-placeholder ${col.align === "right" ? "text-right" : ""}`}
+            className={`${col.width} shrink-0 font-inter text-[11px] font-bold uppercase tracking-[0.04em] text-placeholder ${col.align === "right" ? "text-right" : ""}`}
           >
             {col.label}
           </span>
@@ -47,14 +50,12 @@ export default function DataTable<T>({
 
       {/* Rows */}
       {data.length === 0 ? (
-        <div className="flex items-center justify-center px-6 py-10">
-          <span className="font-inter text-[13px] text-placeholder">Aucun résultat</span>
-        </div>
+        <EmptyState icon={empty?.icon} title={empty?.title ?? "Aucun résultat"} hint={empty?.hint} />
       ) : (
         data.map((row) => (
           <div
             key={keyExtractor(row)}
-            className="flex items-center justify-between border-b border-border-light px-6 last:border-b-0 hover:bg-surface/60 transition-colors"
+            className="group flex items-center justify-between border-b border-border-light px-6 last:border-b-0 hover:bg-primary-light/40 transition-colors"
             style={{ height: rowHeight }}
           >
             {columns.map((col) => {
@@ -67,9 +68,7 @@ export default function DataTable<T>({
                   {col.render ? (
                     col.render(row)
                   ) : (
-                    <span className="font-inter text-[13px] text-subtle">
-                      {value as string}
-                    </span>
+                    <span className="font-inter text-[13px] text-subtle">{value as string}</span>
                   )}
                 </div>
               );
@@ -79,8 +78,8 @@ export default function DataTable<T>({
       )}
 
       {/* Pagination */}
-      {pagination && (
-        <div className="flex items-center justify-between bg-surface px-6" style={{ height: 52 }}>
+      {pagination && data.length > 0 && (
+        <div className="flex items-center justify-between border-t border-border-light bg-surface px-6" style={{ height: 52 }}>
           <button
             onClick={pagination.onPrev}
             disabled={pagination.page <= 1}
@@ -90,7 +89,7 @@ export default function DataTable<T>({
             Précédent
           </button>
           <span className="font-inter text-xs text-placeholder">
-            Page {pagination.page} — {pagination.count} résultats
+            {pagination.count} résultat{pagination.count > 1 ? "s" : ""}
           </span>
           <button
             onClick={pagination.onNext}

@@ -5,6 +5,7 @@ import Link from "next/link";
 import Icon from "@/components/ui/Icon";
 import Badge from "@/components/ui/Badge";
 import DataTable, { Column } from "@/components/ui/DataTable";
+import TableSkeleton from "@/components/ui/TableSkeleton";
 import { useApi } from "@/lib/useApi";
 import type { Ration } from "@/lib/types";
 
@@ -21,8 +22,16 @@ const COLUMNS: Column<Ration>[] = [
     key: "phase", label: "Phase", width: "w-[140px]",
     render: (r) => (r.phase ? <Badge variant={PHASE_VARIANT[r.phase] as Parameters<typeof Badge>[0]["variant"]}>{r.phase}</Badge> : <span className="text-placeholder">—</span>),
   },
-  { key: "nbIngredients", label: "Ingrédients", width: "w-[110px]", render: (r) => <span className="font-inter text-[13px] text-subtle">{r.nbIngredients}</span> },
-  { key: "coutJour", label: "Coût/j (MAD)", width: "w-[130px]", render: (r) => <span className="font-inter text-[13px] font-semibold text-label">{r.coutJour.toFixed(2)}</span> },
+  {
+    key: "nbIngredients", label: "Ingrédients", width: "w-[110px]",
+    render: (r) => (
+      <span className="inline-flex items-center gap-1.5 rounded-full bg-surface px-2.5 py-1 font-inter text-[12px] font-medium text-subtle">
+        <Icon name="wheat" size={12} className="text-placeholder" />
+        {r.nbIngredients}
+      </span>
+    ),
+  },
+  { key: "coutJour", label: "Coût/j", width: "w-[130px]", render: (r) => <span className="inline-flex items-baseline gap-1"><span className="font-inter text-[13px] font-semibold text-label">{r.coutJour.toFixed(2)}</span><span className="font-inter text-[11px] text-placeholder">MAD</span></span> },
   { key: "cible", label: "Assignée à", width: "w-[200px]", render: (r) => <span className="font-inter text-[13px] text-subtle">{r.cible || "—"}</span> },
   {
     key: "_actions", label: "Actions", width: "w-[160px]", align: "right",
@@ -69,10 +78,10 @@ export default function ListeRationsPage() {
           </div>
         </div>
 
-        {loading && <p className="font-inter text-sm text-placeholder">Chargement…</p>}
+        {loading && <TableSkeleton cols={[3, 2, 1, 1, 2, 2]} />}
         {error && <p className="font-inter text-sm text-danger">{error}</p>}
         {!loading && !error && (
-          <DataTable columns={COLUMNS} data={filtered} keyExtractor={(r) => r.id} pagination={{ page: 1, total: 1, count: (rations ?? []).length }} />
+          <DataTable columns={COLUMNS} data={filtered} keyExtractor={(r) => r.id} pagination={{ page: 1, total: 1, count: (rations ?? []).length }} empty={{ icon: "utensils", title: "Aucune ration", hint: search ? "Aucune ration ne correspond à la recherche." : "Composez une ration pour nourrir vos lots." }} />
         )}
       </div>
     </div>

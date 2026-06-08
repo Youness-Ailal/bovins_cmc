@@ -8,7 +8,7 @@ import { useApi } from "@/lib/useApi";
 import { api } from "@/lib/api";
 import DatePicker from "@/components/ui/DatePicker";
 import { useState } from "react";
-import type { Ration, Parcelle, Lot } from "@/lib/types";
+import type { Ration, Parcelle } from "@/lib/types";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
@@ -25,7 +25,6 @@ function FormField({ label, children }: { label: string; children: React.ReactNo
 export default function DistributionRationPage() {
   const { data: rations } = useApi<Ration[]>("/rations");
   const { data: parcelles } = useApi<Parcelle[]>("/parcelles");
-  const { data: lots } = useApi<Lot[]>("/lots");
   const [date, setDate] = useState<Date | undefined>(new Date());
   const [rationId, setRationId] = useState("");
   const [cible, setCible] = useState("");
@@ -93,14 +92,13 @@ export default function DistributionRationPage() {
               </FormField>
 
               <div className="flex gap-4">
-                <FormField label="Cible (Parcelle ou Lot) *">
+                <FormField label="Cible (Parcelle) *">
                   <Select value={cible} onValueChange={(v) => setCible(v ?? "")}>
                     <SelectTrigger className="h-10 w-full rounded-[6px] border border-border bg-card">
                       <SelectValue placeholder="Sélectionner" />
                     </SelectTrigger>
                     <SelectContent>
                       {(parcelles ?? []).map((p) => <SelectItem key={p.id} value={p.nom}>{p.nom}</SelectItem>)}
-                      {(lots ?? []).map((l) => <SelectItem key={l.id} value={l.nom}>{l.nom}</SelectItem>)}
                     </SelectContent>
                   </Select>
                 </FormField>

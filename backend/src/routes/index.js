@@ -8,7 +8,6 @@ router.use('/auth', require('./auth.routes'));
 router.use('/users', require('./user.routes'));
 router.use('/races', require('./race.routes'));
 router.use('/parcelles', require('./parcelle.routes'));
-router.use('/lots', require('./lot.routes'));
 router.use('/animaux', require('./animal.routes'));
 router.use('/stocks', require('./stock.routes'));
 router.use('/rations', require('./ration.routes'));

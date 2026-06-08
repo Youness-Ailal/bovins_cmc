@@ -20,7 +20,7 @@ const rationSchema = new mongoose.Schema(
       enum: ['Veau', 'Croissance', 'Engraissement', 'Finition', ''],
       default: '',
     },
-    cible: { type: String, default: '' }, // parcelle/lot label or id reference (free-form for MVP)
+    cible: { type: String, default: '' }, // parcelle label or id reference (free-form for MVP)
     ingredients: { type: [ingredientSchema], default: [] },
   },
   { timestamps: true }

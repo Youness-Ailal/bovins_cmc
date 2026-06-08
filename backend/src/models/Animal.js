@@ -19,7 +19,6 @@ const animalSchema = new mongoose.Schema(
     poidsActuel: { type: Number, default: 0 },
     dateEntree: { type: Date, default: Date.now },
     parcelle: { type: mongoose.Schema.Types.ObjectId, ref: 'Parcelle', default: null },
-    lot: { type: mongoose.Schema.Types.ObjectId, ref: 'Lot', default: null },
     etatSante: {
       type: String,
       enum: ['Sain', 'En observation', 'En traitement', 'Malade'],

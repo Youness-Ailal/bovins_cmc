@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import Icon from "@/components/ui/Icon";
 import DataTable, { Column } from "@/components/ui/DataTable";
+import TableSkeleton from "@/components/ui/TableSkeleton";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import AdminTabs from "@/components/dashboard/AdminTabs";
 import { useToast } from "@/components/ui/Toast";
@@ -71,10 +72,10 @@ export default function RacesPage() {
       <AdminTabs />
 
       <div className="flex flex-1 flex-col gap-4 overflow-auto p-6">
-        {loading && <p className="font-inter text-sm text-placeholder">Chargement…</p>}
+        {loading && <TableSkeleton cols={[2, 2, 2, 2, 2, 1, 1]} />}
         {error && <p className="font-inter text-sm text-danger">{error}</p>}
         {!loading && !error && (
-          <DataTable columns={COLUMNS} data={races ?? []} keyExtractor={(r) => r.id} pagination={{ page: 1, total: 1, count: (races ?? []).length }} />
+          <DataTable columns={COLUMNS} data={races ?? []} keyExtractor={(r) => r.id} pagination={{ page: 1, total: 1, count: (races ?? []).length }} empty={{ icon: "tag", title: "Aucune race", hint: "Ajoutez les races de votre élevage et leurs objectifs de croissance." }} />
         )}
       </div>
 

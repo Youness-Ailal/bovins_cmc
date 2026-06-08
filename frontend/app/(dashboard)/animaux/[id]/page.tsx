@@ -134,7 +134,6 @@ export default function FicheAnimalPage({ params }: { params: Promise<{ id: stri
               <div className="flex flex-1 flex-col gap-3 rounded-[10px] border border-border-light bg-card p-5">
                 <span className="font-dm-sans text-sm font-semibold text-label">Localisation</span>
                 <Row label="Parcelle" value={animal.parcelle?.nom ?? "—"} />
-                <Row label="Lot" value={animal.lot?.nom ?? "—"} />
                 <div className="flex flex-col gap-1.5">
                   <span className="font-inter text-[11px] text-placeholder">Phase actuelle</span>
                   <Badge variant={PHASE_VARIANT[animal.phase] as Parameters<typeof Badge>[0]["variant"]}>{animal.phase}</Badge>

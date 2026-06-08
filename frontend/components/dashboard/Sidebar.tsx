@@ -8,7 +8,7 @@ import { useAuth } from "@/lib/auth";
 
 const NAV = [
   { href: "/dashboard", icon: "layout-dashboard", label: "Tableau de bord", match: ["/dashboard"] },
-  { href: "/animaux", icon: "scan-line", label: "Animaux", match: ["/animaux", "/lots"] },
+  { href: "/animaux", icon: "scan-line", label: "Animaux", match: ["/animaux"] },
   { href: "/parcelles", icon: "map-pin", label: "Parcelles", match: ["/parcelles"] },
   { href: "/stocks", icon: "package", label: "Stock", match: ["/stocks"] },
   { href: "/rations", icon: "utensils", label: "Rations", match: ["/rations"] },

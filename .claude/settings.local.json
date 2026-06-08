@@ -24,7 +24,8 @@
       "Bash(PORT=5000 node ./bin/www)",
       "Read(//tmp/**)",
       "Bash(curl -s http://localhost:5000/health)",
-      "Bash(node -e \"let d='';process.stdin.on\\('data',c=>d+=c\\).on\\('end',\\(\\)=>{const j=JSON.parse\\(d\\).data;console.log\\('nomFerme:',j.nomFerme,'| rows:',j.alertesConfig.length,'| seuil:',j.alertesConfig[0].seuil,'| active:',j.alertesConfig[0].active\\)}\\)\")"
+      "Bash(node -e \"let d='';process.stdin.on\\('data',c=>d+=c\\).on\\('end',\\(\\)=>{const j=JSON.parse\\(d\\).data;console.log\\('nomFerme:',j.nomFerme,'| rows:',j.alertesConfig.length,'| seuil:',j.alertesConfig[0].seuil,'| active:',j.alertesConfig[0].active\\)}\\)\")",
+      "Bash(node -e \"require\\('./src/routes/index.js'\\); require\\('./src/models/Animal.js'\\); require\\('./src/controllers/animal.controller.js'\\); console.log\\('backend OK: routes/models/controllers load clean'\\)\")"
     ]
   }
 }

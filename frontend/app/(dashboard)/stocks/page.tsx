@@ -4,19 +4,27 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Icon from "@/components/ui/Icon";
-import Badge from "@/components/ui/Badge";
 import DataTable, { Column } from "@/components/ui/DataTable";
+import TableSkeleton from "@/components/ui/TableSkeleton";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
+import ProgressBar from "@/components/ui/ProgressBar";
 import { useToast } from "@/components/ui/Toast";
 import { useApi } from "@/lib/useApi";
 import { api } from "@/lib/api";
 import type { StockArticle } from "@/lib/types";
 
-const STATUT_VARIANT: Record<string, string> = {
-  OK: "sain",
-  Faible: "phase-engraissement",
-  Critique: "malade",
+const STATUT_STYLE: Record<string, { dot: string; text: string; fill: string }> = {
+  OK: { dot: "bg-success", text: "text-success", fill: "bg-success" },
+  Faible: { dot: "bg-warning", text: "text-warning", fill: "bg-warning" },
+  Critique: { dot: "bg-danger", text: "text-danger", fill: "bg-danger" },
 };
+
+// Fill ratio of a stock article: quantité relative to 2× its alert threshold,
+// so the bar sits at ~50% when exactly at threshold.
+function stockPct(a: StockArticle): number {
+  const ref = a.seuil > 0 ? a.seuil * 2 : Math.max(a.quantite, 1);
+  return Math.min(100, Math.round((a.quantite / ref) * 100));
+}
 
 export default function StocksPage() {
   const router = useRouter();
@@ -39,12 +47,36 @@ export default function StocksPage() {
   }
 
   const COLUMNS: Column<StockArticle>[] = [
-    { key: "designation", label: "Désignation", width: "w-[180px]", render: (r) => <span className="font-inter text-[13px] font-semibold text-label">{r.designation}</span> },
-    { key: "categorie", label: "Catégorie", width: "w-[130px]" },
-    { key: "quantite", label: "Quantité", width: "w-[100px]", render: (r) => <span className="font-inter text-[13px] text-label">{r.quantite} {r.unite}</span> },
-    { key: "seuil", label: "Seuil min.", width: "w-[100px]", render: (r) => <span className="font-inter text-[13px] text-subtle">{r.seuil} {r.unite}</span> },
-    { key: "datePeremption", label: "Péremption", width: "w-[110px]", render: (r) => <span className="font-inter text-[13px] text-subtle">{r.datePeremption ? new Date(r.datePeremption).toLocaleDateString("fr-FR", { month: "2-digit", year: "numeric" }) : "—"}</span> },
-    { key: "statut", label: "Statut", width: "w-[90px]", render: (r) => <Badge variant={STATUT_VARIANT[r.statut] as Parameters<typeof Badge>[0]["variant"]}>{r.statut}</Badge> },
+    { key: "designation", label: "Désignation", width: "w-[170px]", render: (r) => <span className="font-inter text-[13px] font-semibold text-label">{r.designation}</span> },
+    { key: "categorie", label: "Catégorie", width: "w-[120px]", render: (r) => <span className="font-inter text-[13px] text-subtle">{r.categorie}</span> },
+    {
+      key: "niveau", label: "Niveau de stock", width: "w-[230px]",
+      render: (r) => {
+        const s = STATUT_STYLE[r.statut];
+        return (
+          <div className="flex w-[210px] flex-col gap-1">
+            <div className="flex items-center justify-between">
+              <span className="font-inter text-[13px] font-semibold text-label">{r.quantite} {r.unite}</span>
+              <span className="font-inter text-[11px] text-placeholder">seuil {r.seuil}</span>
+            </div>
+            <ProgressBar value={stockPct(r)} color={s.fill} height={6} />
+          </div>
+        );
+      },
+    },
+    {
+      key: "statut", label: "Statut", width: "w-[110px]",
+      render: (r) => {
+        const s = STATUT_STYLE[r.statut];
+        return (
+          <span className={`inline-flex items-center gap-1.5 font-inter text-[12px] font-semibold ${s.text}`}>
+            <span className={`h-2 w-2 rounded-full ${s.dot}`} />
+            {r.statut}
+          </span>
+        );
+      },
+    },
+    { key: "datePeremption", label: "Péremption", width: "w-[100px]", render: (r) => <span className="font-inter text-[13px] text-subtle">{r.datePeremption ? new Date(r.datePeremption).toLocaleDateString("fr-FR", { month: "2-digit", year: "numeric" }) : "—"}</span> },
     {
       key: "_actions", label: "Actions", width: "w-[70px]", align: "right",
       render: (r) => (
@@ -101,10 +133,10 @@ export default function StocksPage() {
           </Link>
         </div>
 
-        {loading && <p className="font-inter text-sm text-placeholder">Chargement…</p>}
+        {loading && <TableSkeleton cols={[2, 2, 3, 2, 1, 1]} />}
         {error && <p className="font-inter text-sm text-danger">{error}</p>}
         {!loading && !error && (
-          <DataTable columns={COLUMNS} data={filtered} keyExtractor={(a) => a.id} pagination={{ page: 1, total: 1, count: list.length }} />
+          <DataTable columns={COLUMNS} data={filtered} keyExtractor={(a) => a.id} pagination={{ page: 1, total: 1, count: list.length }} empty={{ icon: "package", title: "Aucun article en stock", hint: search ? "Aucun résultat pour cette recherche." : "Ajoutez un premier article pour suivre vos niveaux." }} />
         )}
       </div>
 

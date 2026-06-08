@@ -43,7 +43,6 @@ export interface Animal {
   poidsActuel: number;
   dateEntree: string;
   parcelle: Ref | null;
-  lot: Ref | null;
   etatSante: "Sain" | "En observation" | "En traitement" | "Malade";
   gmqActuel: number;
   coutCumule: number;
@@ -63,18 +62,6 @@ export interface Pesee {
   gmq: number | null;
   observateur: string;
   notes: string;
-}
-
-export interface Lot {
-  id: string;
-  nom: string;
-  phase: string;
-  dateCreation: string;
-  description: string;
-  nbAnimaux?: number;
-  gmqMoyen?: number;
-  coutTotal?: number;
-  animaux?: Animal[];
 }
 
 export interface Parcelle {

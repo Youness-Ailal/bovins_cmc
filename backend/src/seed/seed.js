@@ -9,7 +9,6 @@ const connectDB = require('../config/db');
 const User = require('../models/User');
 const Race = require('../models/Race');
 const Parcelle = require('../models/Parcelle');
-const Lot = require('../models/Lot');
 const Animal = require('../models/Animal');
 const Pesee = require('../models/Pesee');
 const StockArticle = require('../models/StockArticle');
@@ -27,7 +26,7 @@ async function run() {
   await connectDB();
   console.log('Clearing collections…');
   await Promise.all([
-    User.deleteMany({}), Race.deleteMany({}), Parcelle.deleteMany({}), Lot.deleteMany({}),
+    User.deleteMany({}), Race.deleteMany({}), Parcelle.deleteMany({}),
     Animal.deleteMany({}), Pesee.deleteMany({}), StockArticle.deleteMany({}), StockMouvement.deleteMany({}),
     Ration.deleteMany({}), Distribution.deleteMany({}), Traitement.deleteMany({}), EtatSante.deleteMany({}),
     PlanTraitement.deleteMany({}), Alerte.deleteMany({}), Parametres.deleteMany({}),
@@ -104,25 +103,17 @@ async function run() {
   ]);
   const parcelleByName = Object.fromEntries(parcelles.map((p) => [p.nom, p]));
 
-  // ── Lots ──
-  console.log('Seeding lots…');
-  const lots = await Lot.create([
-    { nom: 'LOT-A', phase: 'Engraissement', dateCreation: new Date('2026-01-12'), description: 'Lot engraissement Q1' },
-    { nom: 'LOT-B', phase: 'Finition', dateCreation: new Date('2026-03-05'), description: 'Lot finition' },
-  ]);
-  const lotByName = Object.fromEntries(lots.map((l) => [l.nom, l]));
-
   // ── Animals ──
   console.log('Seeding animals…');
   const animalsData = [
-    { identifiant: 'ANI-001', race: 'Holstein', sexe: 'Mâle', phase: 'Croissance', parcelle: 'Parcelle Alpha', lot: 'LOT-A', etatSante: 'Sain', poidsActuel: 320, gmqActuel: 0.82, coutCumule: 12450 },
-    { identifiant: 'ANI-002', race: 'Angus', sexe: 'Femelle', phase: 'Engraissement', parcelle: 'Parcelle Beta', lot: 'LOT-A', etatSante: 'Sain', poidsActuel: 410, gmqActuel: 0.74, coutCumule: 8920 },
-    { identifiant: 'ANI-003', race: 'Limousin', sexe: 'Mâle', phase: 'Finition', parcelle: 'Parcelle Alpha', lot: 'LOT-B', etatSante: 'Malade', poidsActuel: 510, gmqActuel: 0.65, coutCumule: 15780 },
-    { identifiant: 'ANI-012', race: 'Holstein', sexe: 'Mâle', phase: 'Engraissement', parcelle: 'Parcelle Beta', lot: 'LOT-A', etatSante: 'En traitement', poidsActuel: 380, gmqActuel: 0.88, coutCumule: 10200 },
-    { identifiant: 'ANI-019', race: 'Charolais', sexe: 'Mâle', phase: 'Finition', parcelle: 'Parcelle Beta', lot: 'LOT-A', etatSante: 'Sain', poidsActuel: 495, gmqActuel: 1.41, coutCumule: 18200 },
-    { identifiant: 'ANI-022', race: 'Angus', sexe: 'Femelle', phase: 'Finition', parcelle: 'Parcelle Alpha', lot: 'LOT-A', etatSante: 'Sain', poidsActuel: 482, gmqActuel: 1.2, coutCumule: 12900 },
-    { identifiant: 'ANI-031', race: 'Angus', sexe: 'Mâle', phase: 'Engraissement', parcelle: 'Parcelle Gamma', lot: 'LOT-B', etatSante: 'En observation', poidsActuel: 360, gmqActuel: 0.79, coutCumule: 9100 },
-    { identifiant: 'ANI-047', race: 'Limousin', sexe: 'Mâle', phase: 'Croissance', parcelle: 'Parcelle Gamma', lot: 'LOT-B', etatSante: 'Malade', poidsActuel: 290, gmqActuel: 0.78, coutCumule: 7800 },
+    { identifiant: 'ANI-001', race: 'Holstein', sexe: 'Mâle', phase: 'Croissance', parcelle: 'Parcelle Alpha', etatSante: 'Sain', poidsActuel: 320, gmqActuel: 0.82, coutCumule: 12450 },
+    { identifiant: 'ANI-002', race: 'Angus', sexe: 'Femelle', phase: 'Engraissement', parcelle: 'Parcelle Beta', etatSante: 'Sain', poidsActuel: 410, gmqActuel: 0.74, coutCumule: 8920 },
+    { identifiant: 'ANI-003', race: 'Limousin', sexe: 'Mâle', phase: 'Finition', parcelle: 'Parcelle Alpha', etatSante: 'Malade', poidsActuel: 510, gmqActuel: 0.65, coutCumule: 15780 },
+    { identifiant: 'ANI-012', race: 'Holstein', sexe: 'Mâle', phase: 'Engraissement', parcelle: 'Parcelle Beta', etatSante: 'En traitement', poidsActuel: 380, gmqActuel: 0.88, coutCumule: 10200 },
+    { identifiant: 'ANI-019', race: 'Charolais', sexe: 'Mâle', phase: 'Finition', parcelle: 'Parcelle Beta', etatSante: 'Sain', poidsActuel: 495, gmqActuel: 1.41, coutCumule: 18200 },
+    { identifiant: 'ANI-022', race: 'Angus', sexe: 'Femelle', phase: 'Finition', parcelle: 'Parcelle Alpha', etatSante: 'Sain', poidsActuel: 482, gmqActuel: 1.2, coutCumule: 12900 },
+    { identifiant: 'ANI-031', race: 'Angus', sexe: 'Mâle', phase: 'Engraissement', parcelle: 'Parcelle Gamma', etatSante: 'En observation', poidsActuel: 360, gmqActuel: 0.79, coutCumule: 9100 },
+    { identifiant: 'ANI-047', race: 'Limousin', sexe: 'Mâle', phase: 'Croissance', parcelle: 'Parcelle Gamma', etatSante: 'Malade', poidsActuel: 290, gmqActuel: 0.78, coutCumule: 7800 },
   ];
   const animals = await Animal.create(
     animalsData.map((a) => ({
@@ -135,7 +126,6 @@ async function run() {
       poidsActuel: a.poidsActuel,
       dateEntree: new Date('2025-09-01'),
       parcelle: parcelleByName[a.parcelle]._id,
-      lot: lotByName[a.lot]._id,
       etatSante: a.etatSante,
       gmqActuel: a.gmqActuel,
       coutCumule: a.coutCumule,

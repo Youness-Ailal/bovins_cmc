@@ -147,14 +147,12 @@ export default function NouvelleRationPage() {
                 <label className="font-inter text-xs font-medium text-label">Associer à</label>
                 <Select value={cible} onValueChange={(v) => setCible(v ?? "")} name="cible">
                   <SelectTrigger className="h-10 w-full rounded-[6px] border border-border bg-card">
-                    <SelectValue placeholder="Parcelle ou lot…" />
+                    <SelectValue placeholder="Parcelle…" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="parcelle-alpha">Parcelle Alpha</SelectItem>
                     <SelectItem value="parcelle-beta">Parcelle Beta</SelectItem>
                     <SelectItem value="parcelle-gamma">Parcelle Gamma</SelectItem>
-                    <SelectItem value="lot-a">LOT-A</SelectItem>
-                    <SelectItem value="lot-b">LOT-B</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

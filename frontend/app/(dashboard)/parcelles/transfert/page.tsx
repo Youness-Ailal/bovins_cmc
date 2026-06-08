@@ -24,13 +24,10 @@ function FormField({ label, children }: { label: string; children: React.ReactNo
 
 const inputCls = "h-10 w-full rounded-[6px] border border-border bg-card px-3 font-inter text-[13px] text-label placeholder:text-placeholder transition-colors focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary";
 
-type TransfertType = "individuel" | "lot";
-
 export default function TransfertParcellesPage() {
   const { data: animaux } = useApi<Animal[]>("/animaux");
   const { data: parcelles } = useApi<Parcelle[]>("/parcelles");
   const [date, setDate] = useState<Date | undefined>(new Date());
-  const [type, setType] = useState<TransfertType>("individuel");
   const [cibleId, setCibleId] = useState("");
   const [parcelleDestId, setParcelleDestId] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -40,7 +37,6 @@ export default function TransfertParcellesPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (type !== "individuel") return toastError("Le transfert par lot sera disponible prochainement — sélectionnez un animal");
     if (!cibleId || !parcelleDestId) return toastError("Animal et parcelle de destination requis");
     setSubmitting(true);
     try {
@@ -75,32 +71,10 @@ export default function TransfertParcellesPage() {
         <div className="w-full max-w-[600px]">
           <form id="transfert-form" onSubmit={handleSubmit} noValidate className="rounded-[12px] border border-border-light bg-card p-8">
             <h2 className="font-dm-sans text-base font-bold text-label">Transfert d&apos;animaux</h2>
-            <p className="mt-1 font-inter text-[13px] text-subtle">Déplacez un animal ou un lot vers une autre parcelle.</p>
+            <p className="mt-1 font-inter text-[13px] text-subtle">Déplacez un animal vers une autre parcelle.</p>
 
             <div className="mt-6 flex flex-col gap-4">
-              <FormField label="Type de transfert">
-                <div className="flex gap-2.5">
-                  {([
-                    { id: "individuel", label: "Animal individuel" },
-                    { id: "lot", label: "Lot complet" },
-                  ] as const).map((t) => (
-                    <button
-                      key={t.id}
-                      type="button"
-                      onClick={() => setType(t.id)}
-                      className={`flex flex-1 items-center justify-center gap-2 rounded-[6px] py-2.5 font-inter text-[13px] transition-colors ${
-                        type === t.id
-                          ? "border-2 border-primary bg-primary-light font-medium text-primary"
-                          : "border border-border bg-card text-subtle"
-                      }`}
-                    >
-                      {t.label}
-                    </button>
-                  ))}
-                </div>
-              </FormField>
-
-              <FormField label={type === "individuel" ? "Animal *" : "Lot *"}>
+              <FormField label="Animal *">
                 <Select value={cibleId} onValueChange={(v) => setCibleId(v ?? "")}>
                   <SelectTrigger className="h-10 w-full rounded-[6px] border border-border bg-card">
                     <SelectValue placeholder="Rechercher un animal…" />

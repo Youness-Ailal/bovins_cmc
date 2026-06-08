@@ -199,7 +199,6 @@ Inline SVG sprites — no external requests. **Only the icons listed below are a
 |---|---|
 | `layout-dashboard` | Dashboard nav |
 | `scan-line` | Animaux nav |
-| `layers` | Lots nav |
 | `map-pin` | Parcelles nav |
 | `package` | Stock nav |
 | `utensils` | Rations nav |
@@ -352,7 +351,7 @@ function OccupationBar({ pct }: { pct: number }) {
 
 ```tsx
 <div className="flex flex-wrap items-center gap-2 rounded-[8px] border border-border-light bg-card p-3">
-  {["Race", "Phase", "Lot"].map((d) => (
+  {["Race", "Phase", "Parcelle"].map((d) => (
     <button key={d} className="flex items-center gap-1 rounded-[6px] border border-border-light px-2.5 py-1.5 font-inter text-[13px] text-subtle hover:bg-surface transition-colors">
       {d}
       <Icon name="chevron-down" size={12} className="text-placeholder" />
@@ -426,4 +425,3 @@ Sidebar defines these routes — they need pages:
 | `/animaux/[id]/sortie` | Animal exit form |
 | `/animaux/[id]/modifier` | Animal edit form (stub exists) |
 | `/parcelles/[id]` | Parcel detail |
-| `/lots/[id]` | Lot detail |

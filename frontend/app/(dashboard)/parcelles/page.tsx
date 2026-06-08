@@ -2,17 +2,19 @@
 
 import Link from "next/link";
 import Icon from "@/components/ui/Icon";
+import ProgressBar from "@/components/ui/ProgressBar";
+import EmptyState from "@/components/ui/EmptyState";
+import TableSkeleton from "@/components/ui/TableSkeleton";
 import { useApi } from "@/lib/useApi";
 import type { Parcelle } from "@/lib/types";
 
 function OccupationBar({ pct }: { pct: number }) {
+  // High occupancy = good fill, but >90% should warn (overcrowding risk).
   const color = pct >= 90 ? "bg-danger" : pct >= 70 ? "bg-warning" : "bg-success";
   return (
     <div className="flex items-center gap-2.5">
-      <div className="h-2 w-32 overflow-hidden rounded-full bg-surface">
-        <div className={`h-full rounded-full ${color}`} style={{ width: `${Math.min(pct, 100)}%` }} />
-      </div>
-      <span className="font-inter text-[13px] text-subtle">{pct}%</span>
+      <ProgressBar value={pct} color={color} height={8} className="w-32" />
+      <span className="font-inter text-[13px] font-medium text-subtle">{pct}%</span>
     </div>
   );
 }
@@ -31,12 +33,12 @@ export default function ListeParcellesPage() {
           </Link>
         </div>
 
-        {loading && <p className="font-inter text-sm text-placeholder">Chargement…</p>}
+        {loading && <TableSkeleton cols={[2, 2, 3, 2, 1]} />}
         {error && <p className="font-inter text-sm text-danger">{error}</p>}
 
         {!loading && !error && (
-          <div className="overflow-hidden rounded-[12px] border border-border-light bg-card">
-            <div className="flex items-center gap-4 bg-surface px-5" style={{ height: 44 }}>
+          <div className="overflow-hidden rounded-[12px] border border-border-light bg-card shadow-[0_1px_2px_rgba(27,46,31,0.04)]">
+            <div className="flex items-center gap-4 border-b border-border-light bg-surface px-5" style={{ height: 44 }}>
               <span className="flex-1 font-inter text-[11px] font-bold uppercase tracking-wide text-placeholder">Nom parcelle</span>
               <span className="flex-1 font-inter text-[11px] font-bold uppercase tracking-wide text-placeholder">Capacité max</span>
               <span className="w-[260px] shrink-0 font-inter text-[11px] font-bold uppercase tracking-wide text-placeholder">Occupation actuelle</span>
@@ -45,7 +47,7 @@ export default function ListeParcellesPage() {
             </div>
 
             {(parcelles ?? []).map((p) => (
-              <div key={p.id} className="flex items-center gap-4 border-b border-border-light px-5 last:border-b-0" style={{ height: 56 }}>
+              <div key={p.id} className="flex items-center gap-4 border-b border-border-light px-5 last:border-b-0 hover:bg-primary-light/40 transition-colors" style={{ height: 56 }}>
                 <span className="flex-1 font-inter text-sm font-medium text-label">{p.nom}</span>
                 <span className="flex-1 font-inter text-sm text-subtle">{p.capaciteMax} animaux</span>
                 <div className="flex w-[260px] shrink-0 items-center gap-2.5">
@@ -61,7 +63,7 @@ export default function ListeParcellesPage() {
               </div>
             ))}
             {(parcelles ?? []).length === 0 && (
-              <div className="flex items-center justify-center py-10 font-inter text-[13px] text-placeholder">Aucune parcelle</div>
+              <EmptyState icon="map" title="Aucune parcelle" hint="Créez une parcelle pour répartir vos animaux." />
             )}
           </div>
         )}

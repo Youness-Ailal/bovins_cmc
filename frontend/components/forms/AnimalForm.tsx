@@ -8,7 +8,7 @@ import { useSaveToast } from "@/lib/useSaveToast";
 import { useToast } from "@/components/ui/Toast";
 import { useApi } from "@/lib/useApi";
 import { api } from "@/lib/api";
-import type { Race, Parcelle, Lot, Animal } from "@/lib/types";
+import type { Race, Parcelle, Animal } from "@/lib/types";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
@@ -36,7 +36,6 @@ export default function AnimalForm({ mode, animalId }: AnimalFormProps) {
 
   const { data: races } = useApi<Race[]>("/races");
   const { data: parcelles } = useApi<Parcelle[]>("/parcelles");
-  const { data: lots } = useApi<Lot[]>("/lots");
   const { data: animal } = useApi<Animal>(mode === "edit" && animalId ? `/animaux/${animalId}` : null);
 
   const [form, setForm] = useState({
@@ -49,7 +48,6 @@ export default function AnimalForm({ mode, animalId }: AnimalFormProps) {
     mere: "",
     poidsEntree: "",
     parcelle: "",
-    lot: "",
     notes: "",
   });
   const [dateEntree, setDateEntree] = useState<Date | undefined>();
@@ -68,7 +66,6 @@ export default function AnimalForm({ mode, animalId }: AnimalFormProps) {
         mere: animal.mere ?? "",
         poidsEntree: String(animal.poidsEntree ?? ""),
         parcelle: animal.parcelle?.id ?? "",
-        lot: animal.lot?.id ?? "",
         notes: animal.notes ?? "",
       });
       if (animal.dateEntree) setDateEntree(new Date(animal.dateEntree));
@@ -99,7 +96,6 @@ export default function AnimalForm({ mode, animalId }: AnimalFormProps) {
       poidsEntree: Number(form.poidsEntree) || 0,
       dateEntree: dateEntree ?? new Date(),
       parcelle: form.parcelle || null,
-      lot: form.lot || null,
       notes: form.notes,
     };
     try {
@@ -228,16 +224,6 @@ export default function AnimalForm({ mode, animalId }: AnimalFormProps) {
                   </Select>
                 </FormField>
 
-                <FormField label="Lot assigné">
-                  <Select value={form.lot} onValueChange={(v) => set("lot", v ?? "")}>
-                    <SelectTrigger className="h-10 w-full rounded-[6px] border border-border bg-card font-inter text-[13px]">
-                      <SelectValue placeholder="Sélectionner un lot" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {(lots ?? []).map((l) => <SelectItem key={l.id} value={l.id}>{l.nom}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                </FormField>
               </div>
             </div>
 

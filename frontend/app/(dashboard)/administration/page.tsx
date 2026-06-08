@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import Icon from "@/components/ui/Icon";
 import DataTable, { Column } from "@/components/ui/DataTable";
+import TableSkeleton from "@/components/ui/TableSkeleton";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import AdminTabs from "@/components/dashboard/AdminTabs";
 import { useToast } from "@/components/ui/Toast";
@@ -75,10 +76,10 @@ export default function AdministrationPage() {
       <AdminTabs />
 
       <div className="flex flex-1 flex-col gap-4 overflow-auto p-6">
-        {loading && <p className="font-inter text-sm text-placeholder">Chargement…</p>}
+        {loading && <TableSkeleton cols={[2, 3, 2, 1, 2, 1]} />}
         {error && <p className="font-inter text-sm text-danger">{error}</p>}
         {!loading && !error && (
-          <DataTable columns={COLUMNS} data={utilisateurs ?? []} keyExtractor={(u) => u.id} pagination={{ page: 1, total: 1, count: (utilisateurs ?? []).length }} />
+          <DataTable columns={COLUMNS} data={utilisateurs ?? []} keyExtractor={(u) => u.id} pagination={{ page: 1, total: 1, count: (utilisateurs ?? []).length }} empty={{ icon: "users", title: "Aucun utilisateur", hint: "Invitez les membres de votre équipe à accéder à BOVITRACK." }} />
         )}
       </div>
 

@@ -6,7 +6,7 @@ const alerteSchema = new mongoose.Schema(
     niveau: { type: String, enum: ['Critique', 'Avertissement', 'Info'], required: true },
     categorie: { type: String, default: '' }, // stock_faible, traitement_a_venir, etc.
     message: { type: String, required: true },
-    concerne: { type: String, default: '' }, // animal id / article / lot label
+    concerne: { type: String, default: '' }, // animal id / article label
     date: { type: Date, default: Date.now },
     traitee: { type: Boolean, default: false },
   },

@@ -10,7 +10,6 @@ import {
 
 const EXPORTS = [
   { id: "animaux", label: "Animaux", desc: "Fiche complète, phases, GMQ, coûts", icon: "scan-line" },
-  { id: "lots", label: "Lots", desc: "Composition, performance, IC moyen", icon: "layers" },
   { id: "rations", label: "Distributions alimentaires", desc: "Historique des distributions et coûts", icon: "utensils" },
   { id: "sante", label: "Traitements vétérinaires", desc: "Protocoles, produits, délais de retrait", icon: "heart-pulse" },
   { id: "stocks", label: "Mouvements de stock", desc: "Entrées, sorties, soldes", icon: "package" },

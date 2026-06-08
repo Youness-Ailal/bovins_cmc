@@ -9,14 +9,13 @@ const { computeGMQ } = require('../utils/calculations');
 
 const PHASES = ['Veau', 'Croissance', 'Engraissement', 'Finition'];
 
-// GET /api/animaux  (supports ?race=&phase=&parcelle=&lot=&etatSante=&statut=&search=)
+// GET /api/animaux  (supports ?race=&phase=&parcelle=&etatSante=&statut=&search=)
 exports.list = asyncHandler(async (req, res) => {
-  const { race, phase, parcelle, lot, etatSante, statut, search } = req.query;
+  const { race, phase, parcelle, etatSante, statut, search } = req.query;
   const filter = {};
   if (race) filter.race = race;
   if (phase) filter.phase = phase;
   if (parcelle) filter.parcelle = parcelle;
-  if (lot) filter.lot = lot;
   if (etatSante) filter.etatSante = etatSante;
   // statut=all → no filter (include sorted animals); otherwise default to Actif
   if (statut !== 'all') filter.statut = statut || 'Actif';
@@ -25,7 +24,6 @@ exports.list = asyncHandler(async (req, res) => {
   const animaux = await Animal.find(filter)
     .populate('race', 'nom poidsAbattage gmqCible')
     .populate('parcelle', 'nom')
-    .populate('lot', 'nom')
     .sort('-createdAt');
   res.json({ success: true, data: animaux, meta: { total: animaux.length } });
 });
@@ -35,8 +33,7 @@ exports.pretsAVendre = asyncHandler(async (req, res) => {
   const now = new Date();
   const animaux = await Animal.find({ statut: 'Actif' })
     .populate('race', 'nom poidsAbattage')
-    .populate('parcelle', 'nom')
-    .populate('lot', 'nom');
+    .populate('parcelle', 'nom');
 
   const prets = animaux
     .filter((a) => {
@@ -57,8 +54,7 @@ exports.pretsAVendre = asyncHandler(async (req, res) => {
 exports.getOne = asyncHandler(async (req, res) => {
   const animal = await Animal.findById(req.params.id)
     .populate('race')
-    .populate('parcelle', 'nom')
-    .populate('lot', 'nom');
+    .populate('parcelle', 'nom');
   if (!animal) throw ApiError.notFound();
 
   const pesees = await Pesee.find({ animal: animal._id }).sort('-date');
