@@ -17,5 +17,6 @@ router.use('/dashboard', require('./dashboard.routes'));
 router.use('/parametres', require('./parametres.routes'));
 router.use('/finances',      require('./finances.routes'));
 router.use('/fournisseurs',  require('./fournisseur.routes'));
+router.use('/boviai',        require('./boviAI.routes'));
 
 module.exports = router;

@@ -7,8 +7,18 @@ import Icon from "@/components/ui/Icon";
 import { useAuth } from "@/lib/auth";
 import { isAdmin } from "@/lib/permissions";
 
-const NAV = [
+interface NavItem {
+  href: string;
+  icon: string;
+  label: string;
+  match: string[];
+  adminOnly: boolean;
+  badge?: string;
+}
+
+const NAV: NavItem[] = [
   { href: "/dashboard", icon: "layout-dashboard", label: "Tableau de bord", match: ["/dashboard"], adminOnly: false },
+  { href: "/boviai", icon: "sparkles", label: "BoviAI", match: ["/boviai"], adminOnly: false, badge: "IA" },
   { href: "/animaux", icon: "scan-line", label: "Animaux", match: ["/animaux"], adminOnly: false },
   { href: "/parcelles", icon: "map-pin", label: "Parcelles", match: ["/parcelles"], adminOnly: false },
   { href: "/stocks", icon: "package", label: "Stock", match: ["/stocks"], adminOnly: false },
@@ -45,7 +55,7 @@ export default function Sidebar() {
         <p className="mb-2 px-3 font-inter text-[11px] font-semibold tracking-[0.07em] text-placeholder">
           MENU PRINCIPAL
         </p>
-        {nav.map(({ href, icon, label, match }) => {
+        {nav.map(({ href, icon, label, match, badge }) => {
           const active = isActive(match);
           return (
             <Link
@@ -59,6 +69,11 @@ export default function Sidebar() {
             >
               <Icon name={icon} size={20} strokeWidth={active ? 2 : 1.75} />
               {label}
+              {badge && (
+                <span className="ml-auto rounded-full bg-primary px-1.5 py-0.5 font-dm-sans text-[9px] font-bold uppercase leading-none tracking-wide text-white">
+                  {badge}
+                </span>
+              )}
             </Link>
           );
         })}

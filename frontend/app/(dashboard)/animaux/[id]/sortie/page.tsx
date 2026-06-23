@@ -5,7 +5,7 @@ import Link from "next/link";
 import Icon from "@/components/ui/Icon";
 import { useSaveToast } from "@/lib/useSaveToast";
 import { useToast } from "@/components/ui/Toast";
-import { api } from "@/lib/api";
+import { api, downloadFile } from "@/lib/api";
 import DatePicker from "@/components/ui/DatePicker";
 
 type Motif = "vente" | "abattage" | "mort";
@@ -37,6 +37,18 @@ export default function SortieAnimalPage({ params }: { params: Promise<{ id: str
         prix: Number(fd.get("prixVente")) || 0,
         notes: String(fd.get("notes") || ""),
       });
+
+      // For a sale/slaughter, propose the transport laissez-passer (best-effort:
+      // a download failure must not block the redirect / success flow).
+      if (motif === "vente" || motif === "abattage") {
+        try {
+          const qs = new URLSearchParams({ destination: "À compléter" }).toString();
+          await downloadFile(`/animaux/${id}/laissez-passer?${qs}`, `laissez-passer-${id}.pdf`);
+        } catch {
+          /* ignore — the user can still download it from the animal sheet */
+        }
+      }
+
       notifySaved("Sortie enregistrée — fiche clôturée", "/animaux");
     } catch (err) {
       toastError(err instanceof Error ? err.message : "Erreur");

@@ -6,6 +6,9 @@ import Icon from "@/components/ui/Icon";
 import DataTable, { Column } from "@/components/ui/DataTable";
 import TableSkeleton from "@/components/ui/TableSkeleton";
 import { useApi } from "@/lib/useApi";
+import { downloadFile } from "@/lib/api";
+import { exportCsv } from "@/lib/exportCsv";
+import { useToast } from "@/components/ui/Toast";
 import type { FinancesTroupeau, FinancesAnimal } from "@/lib/types";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
@@ -76,6 +79,38 @@ export default function FinancesPage() {
     .map((a) => ({ name: a.identifiant, benefice: a.benefice, marge: a.marge }));
 
   const kpis = data?.kpis;
+  const { success, error: toastError } = useToast();
+  const [exporting, setExporting] = useState(false);
+
+  function handleExportCsv() {
+    exportCsv<FinancesAnimal>(`finances-${new Date().toISOString().slice(0, 10)}`, [
+      { header: "Identifiant", value: (a) => a.identifiant },
+      { header: "Race", value: (a) => a.race },
+      { header: "Phase", value: (a) => a.phase },
+      { header: "Poids entrée (kg)", value: (a) => a.poidsEntree },
+      { header: "Poids actuel (kg)", value: (a) => a.poidsActuel },
+      { header: "GMQ (kg/j)", value: (a) => a.gmqActuel },
+      { header: "Coût achat (MAD)", value: (a) => a.coutAchat },
+      { header: "Coût alimentation (MAD)", value: (a) => a.coutAlimentation },
+      { header: "Coût santé (MAD)", value: (a) => a.coutSante },
+      { header: "Coût total (MAD)", value: (a) => a.coutTotal },
+      { header: "Revenu projeté (MAD)", value: (a) => a.revenu },
+      { header: "Bénéfice (MAD)", value: (a) => a.benefice },
+      { header: "Marge (%)", value: (a) => a.marge },
+    ], filtered);
+  }
+
+  async function handleRapportPdf() {
+    setExporting(true);
+    try {
+      await downloadFile("/finances/rapport", "rapport-financier.pdf");
+      success("Rapport financier téléchargé");
+    } catch (err) {
+      toastError(err instanceof Error ? err.message : "Erreur lors de la génération");
+    } finally {
+      setExporting(false);
+    }
+  }
 
   return (
     <div className="flex flex-1 flex-col overflow-hidden bg-surface">
@@ -84,13 +119,31 @@ export default function FinancesPage() {
           <span className="font-dm-sans text-xl font-semibold text-label">Finances</span>
           <span className="font-inter text-sm text-placeholder">/ Rentabilité du troupeau</span>
         </div>
-        <Link
-          href="/administration/parametres"
-          className="flex items-center gap-1.5 rounded-[6px] border border-border-light bg-surface px-3.5 py-2 font-dm-sans text-[13px] font-semibold text-subtle hover:bg-border-light transition-colors"
-        >
-          <Icon name="settings" size={14} />
-          Prix de vente: {data?.prixVente ?? 35} MAD/kg
-        </Link>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleExportCsv}
+            disabled={filtered.length === 0}
+            className="flex items-center gap-1.5 rounded-[6px] border border-border-light bg-surface px-3.5 py-2 font-dm-sans text-[13px] font-semibold text-subtle hover:bg-border-light transition-colors disabled:opacity-50"
+          >
+            <Icon name="file-text" size={14} />
+            Exporter CSV
+          </button>
+          <button
+            onClick={handleRapportPdf}
+            disabled={exporting}
+            className="flex items-center gap-1.5 rounded-[6px] border border-border-light bg-surface px-3.5 py-2 font-dm-sans text-[13px] font-semibold text-subtle hover:bg-border-light transition-colors disabled:opacity-50"
+          >
+            <Icon name="clipboard-list" size={14} />
+            Rapport PDF
+          </button>
+          <Link
+            href="/administration/parametres"
+            className="flex items-center gap-1.5 rounded-[6px] border border-border-light bg-surface px-3.5 py-2 font-dm-sans text-[13px] font-semibold text-subtle hover:bg-border-light transition-colors"
+          >
+            <Icon name="settings" size={14} />
+            Prix de vente: {data?.prixVente ?? 35} MAD/kg
+          </Link>
+        </div>
       </header>
 
       <div className="flex flex-1 flex-col gap-5 overflow-auto p-6">

@@ -7,12 +7,13 @@
 const app = require('../app');
 const debug = require('debug')('backend:server');
 const http = require('http');
+const config = require('../src/config/env');
 
 /**
  * Get port from environment and store in Express.
  */
 
-const port = normalizePort(process.env.PORT || '3001');
+const port = normalizePort(String(config.port));
 app.set('port', port);
 
 /**

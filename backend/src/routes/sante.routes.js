@@ -6,6 +6,7 @@ const { GESTION_SANTE } = require('../config/roles');
 router.use(protect);
 
 // Traitements
+router.get('/traitements/registre', c.registreTraitements); // PDF — before :id-style routes
 router.get('/traitements', c.listTraitements);
 router.post('/traitements', restrictTo(...GESTION_SANTE), c.createTraitement);
 router.put('/traitements/:id', restrictTo(...GESTION_SANTE), c.updateTraitement);
@@ -20,5 +21,8 @@ router.get('/plans', c.listPlans);
 router.post('/plans', restrictTo(...GESTION_SANTE), c.createPlan);
 router.put('/plans/:id', restrictTo(...GESTION_SANTE), c.updatePlan);
 router.delete('/plans/:id', restrictTo(...GESTION_SANTE), c.removePlan);
+
+// Carnet de santé PDF (Plan 05) — any authenticated user can download
+router.get('/animal/:id/carnet', c.carnet);
 
 module.exports = router;

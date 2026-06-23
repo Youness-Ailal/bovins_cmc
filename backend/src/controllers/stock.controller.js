@@ -3,6 +3,8 @@ const ApiError = require('../utils/ApiError');
 const StockArticle = require('../models/StockArticle');
 const StockMouvement = require('../models/StockMouvement');
 const Alerte = require('../models/Alerte');
+const Parametres = require('../models/Parametres');
+const { streamRapportStock } = require('../utils/pdfGenerator');
 
 async function checkLowStock(article) {
   if (article.seuil > 0 && article.quantite <= article.seuil) {
@@ -22,6 +24,39 @@ exports.listArticles = asyncHandler(async (req, res) => {
     .populate('fournisseur', 'nom region type')
     .sort('designation');
   res.json({ success: true, data: articles, meta: { total: articles.length } });
+});
+
+// GET /api/stocks/rapport — état des stocks (PDF)
+exports.rapportStock = asyncHandler(async (req, res) => {
+  const [articles, params] = await Promise.all([
+    StockArticle.find().sort('designation'),
+    Parametres.findOne(),
+  ]);
+
+  const rows = articles.map((a) => ({
+    designation: a.designation,
+    categorie: a.categorie,
+    unite: a.unite,
+    quantite: a.quantite,
+    seuil: a.seuil,
+    prixUnitaire: a.prixUnitaire,
+    valeur: Math.round(a.quantite * a.prixUnitaire),
+    statut: a.statut, // virtual: OK | Faible | Critique
+  }));
+
+  const valeurTotale = rows.reduce((s, r) => s + r.valeur, 0);
+  const sousSeuilCount = rows.filter((r) => r.statut !== 'OK').length;
+
+  res.setHeader('Content-Type', 'application/pdf');
+  res.setHeader('Content-Disposition', 'attachment; filename="etat-stocks.pdf"');
+
+  streamRapportStock(res, {
+    ferme: params?.nomFerme || 'BOVITRACK',
+    total: rows.length,
+    valeurTotale,
+    sousSeuilCount,
+    articles: rows,
+  });
 });
 
 exports.getArticle = asyncHandler(async (req, res) => {

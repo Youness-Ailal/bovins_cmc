@@ -10,6 +10,7 @@ router.get('/mouvements', c.listMouvements);
 router.post('/mouvements', restrictTo(...SAISIE_STOCK_RATION), c.createMouvement);
 
 // Articles
+router.get('/rapport', c.rapportStock); // PDF — before /:id so it isn't treated as an id
 router.get('/', c.listArticles);
 router.post('/', restrictTo(...GESTION_FERME), c.createArticle);
 router.get('/:id', c.getArticle);

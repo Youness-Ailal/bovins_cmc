@@ -21,4 +21,8 @@ router.patch('/:id/phase', restrictTo(...GESTION_FERME), c.changePhase);
 router.patch('/:id/sante', restrictTo(...SAISIE_TERRAIN), c.changeEtatSante);
 router.post('/:id/sortie', restrictTo(...SAISIE_SORTIE), c.sortie);
 
+// Documents PDF (Plan 05) — any authenticated user can download
+router.get('/:id/passeport', c.passeport);
+router.get('/:id/laissez-passer', c.laissezPasser);
+
 module.exports = router;

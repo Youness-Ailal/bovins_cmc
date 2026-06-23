@@ -9,9 +9,10 @@ import TableSkeleton from "@/components/ui/TableSkeleton";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import { useToast } from "@/components/ui/Toast";
 import { useApi } from "@/lib/useApi";
-import { api } from "@/lib/api";
+import { api, downloadFile } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { can } from "@/lib/permissions";
+import { exportCsv } from "@/lib/exportCsv";
 import type { StockArticle } from "@/lib/types";
 
 const STATUT_STYLE = {
@@ -37,6 +38,7 @@ export default function StocksPage() {
   const [search, setSearch] = useState("");
   const [catFilter, setCatFilter] = useState<string>("Tous");
   const [toDelete, setToDelete] = useState<StockArticle | null>(null);
+  const [exporting, setExporting] = useState(false);
 
   async function confirmDelete() {
     if (!toDelete) return;
@@ -59,6 +61,34 @@ export default function StocksPage() {
     return matchSearch && matchCat;
   });
 
+  function handleExportCsv() {
+    exportCsv<StockArticle>(`stocks-${new Date().toISOString().slice(0, 10)}`, [
+      { header: "Désignation", value: (a) => a.designation },
+      { header: "Référence", value: (a) => a.reference },
+      { header: "Catégorie", value: (a) => a.categorie },
+      { header: "Unité", value: (a) => a.unite },
+      { header: "Quantité", value: (a) => a.quantite },
+      { header: "Seuil", value: (a) => a.seuil },
+      { header: "Prix unitaire (MAD)", value: (a) => a.prixUnitaire },
+      { header: "Valeur (MAD)", value: (a) => Math.round(a.quantite * a.prixUnitaire) },
+      { header: "Statut", value: (a) => a.statut },
+      { header: "Fournisseur", value: (a) => a.fournisseur?.nom ?? "" },
+      { header: "Date péremption", value: (a) => (a.datePeremption ? new Date(a.datePeremption).toLocaleDateString("fr-FR") : "") },
+    ], filtered);
+  }
+
+  async function handleRapportPdf() {
+    setExporting(true);
+    try {
+      await downloadFile("/stocks/rapport", "etat-stocks.pdf");
+      success("État des stocks téléchargé");
+    } catch (err) {
+      toastError(err instanceof Error ? err.message : "Erreur lors de la génération");
+    } finally {
+      setExporting(false);
+    }
+  }
+
   return (
     <div className="flex flex-1 flex-col overflow-hidden bg-surface">
       {/* Header */}
@@ -68,6 +98,22 @@ export default function StocksPage() {
           <span className="font-inter text-sm text-placeholder">/ {list.length} articles</span>
         </div>
         <div className="flex items-center gap-2">
+          <button
+            onClick={handleExportCsv}
+            disabled={filtered.length === 0}
+            className="flex items-center gap-1.5 rounded-[6px] border border-border-light bg-surface px-3.5 py-2 font-dm-sans text-[13px] font-semibold text-subtle hover:bg-border-light transition-colors disabled:opacity-50"
+          >
+            <Icon name="file-text" size={14} />
+            Exporter CSV
+          </button>
+          <button
+            onClick={handleRapportPdf}
+            disabled={exporting}
+            className="flex items-center gap-1.5 rounded-[6px] border border-border-light bg-surface px-3.5 py-2 font-dm-sans text-[13px] font-semibold text-subtle hover:bg-border-light transition-colors disabled:opacity-50"
+          >
+            <Icon name="clipboard-list" size={14} />
+            Rapport PDF
+          </button>
           <Link
             href="/stocks/historique"
             className="flex items-center gap-1.5 rounded-[6px] border border-border-light bg-surface px-3.5 py-2 font-dm-sans text-[13px] font-semibold text-subtle hover:bg-border-light transition-colors"

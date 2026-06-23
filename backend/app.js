@@ -2,7 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
 const logger = require('morgan');
-require('dotenv').config();
+const config = require('./src/config/env');
 
 const connectDB = require('./src/config/db');
 const apiRouter = require('./src/routes/index');
@@ -17,7 +17,7 @@ const app = express();
 app.use(logger('dev'));
 app.use(
   cors({
-    origin: process.env.CLIENT_ORIGIN || true,
+    origin: config.clientOrigin || true,
     credentials: true,
   })
 );

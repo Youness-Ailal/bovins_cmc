@@ -9,6 +9,9 @@ import { traitementStatutStyle } from "@/lib/statusStyles";
 import { useApi } from "@/lib/useApi";
 import { useAuth } from "@/lib/auth";
 import { can } from "@/lib/permissions";
+import { downloadFile } from "@/lib/api";
+import { exportCsv } from "@/lib/exportCsv";
+import { useToast } from "@/components/ui/Toast";
 import type { Traitement } from "@/lib/types";
 
 const TYPE_STYLE: Record<string, { bg: string; text: string }> = {
@@ -32,8 +35,10 @@ export default function SantePage() {
   const { user } = useAuth();
   const canManage = can(user?.role, "manageSante");
   const { data: traitements, loading, error } = useApi<Traitement[]>("/sante/traitements");
+  const { success, error: toastError } = useToast();
   const [search, setSearch] = useState("");
   const [statutFilter, setStatutFilter] = useState("Tous");
+  const [exporting, setExporting] = useState(false);
 
   const list = traitements ?? [];
   const countOf = (s: string) => list.filter((t) => t.statut === s).length;
@@ -44,6 +49,33 @@ export default function SantePage() {
     return !q || animalCode(t).toLowerCase().includes(q) || t.produit.toLowerCase().includes(q) || t.type.toLowerCase().includes(q);
   });
 
+  function handleExportCsv() {
+    exportCsv<Traitement>(`traitements-${new Date().toISOString().slice(0, 10)}`, [
+      { header: "Animal", value: (t) => animalCode(t) },
+      { header: "Type", value: (t) => t.type },
+      { header: "Produit", value: (t) => t.produit },
+      { header: "Dose", value: (t) => `${t.dose} ${t.doseUnite}`.trim() },
+      { header: "Voie", value: (t) => t.voie },
+      { header: "Début", value: (t) => new Date(t.dateDebut).toLocaleDateString("fr-FR") },
+      { header: "Fin", value: (t) => (t.dateFin ? new Date(t.dateFin).toLocaleDateString("fr-FR") : "") },
+      { header: "Vétérinaire", value: (t) => t.veterinaire },
+      { header: "Délai retrait (j)", value: (t) => t.delaiRetrait },
+      { header: "Statut", value: (t) => t.statut },
+    ], filtered);
+  }
+
+  async function handleRegistrePdf() {
+    setExporting(true);
+    try {
+      await downloadFile("/sante/traitements/registre", "registre-traitements.pdf");
+      success("Registre des traitements téléchargé");
+    } catch (err) {
+      toastError(err instanceof Error ? err.message : "Erreur lors de la génération");
+    } finally {
+      setExporting(false);
+    }
+  }
+
   return (
     <div className="flex flex-1 flex-col overflow-hidden bg-surface">
       <header className="flex h-16 shrink-0 items-center justify-between border-b border-border-light bg-card px-7">
@@ -51,18 +83,36 @@ export default function SantePage() {
           <span className="font-dm-sans text-xl font-semibold text-label">Santé</span>
           <span className="rounded-full border border-border-light bg-surface px-2.5 py-0.5 font-inter text-[12px] font-semibold text-subtle">{list.length}</span>
         </div>
-        {canManage && (
-          <div className="flex items-center gap-2">
-            <Link href="/sante/planification" className="flex items-center gap-1.5 rounded-[6px] border border-border-light bg-surface px-3.5 py-2 font-dm-sans text-[13px] font-semibold text-subtle hover:bg-border-light transition-colors">
-              <Icon name="calendar" size={14} />
-              Planifier
-            </Link>
-            <Link href="/sante/traitement/nouveau" className="flex items-center gap-1.5 rounded-[6px] bg-primary px-3.5 py-2 font-dm-sans text-[13px] font-semibold text-white hover:bg-primary/90 transition-colors">
-              <Icon name="plus" size={14} />
-              Nouveau traitement
-            </Link>
-          </div>
-        )}
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleExportCsv}
+            disabled={filtered.length === 0}
+            className="flex items-center gap-1.5 rounded-[6px] border border-border-light bg-surface px-3.5 py-2 font-dm-sans text-[13px] font-semibold text-subtle hover:bg-border-light transition-colors disabled:opacity-50"
+          >
+            <Icon name="file-text" size={14} />
+            Exporter CSV
+          </button>
+          <button
+            onClick={handleRegistrePdf}
+            disabled={exporting}
+            className="flex items-center gap-1.5 rounded-[6px] border border-border-light bg-surface px-3.5 py-2 font-dm-sans text-[13px] font-semibold text-subtle hover:bg-border-light transition-colors disabled:opacity-50"
+          >
+            <Icon name="clipboard-list" size={14} />
+            Registre PDF
+          </button>
+          {canManage && (
+            <>
+              <Link href="/sante/planification" className="flex items-center gap-1.5 rounded-[6px] border border-border-light bg-surface px-3.5 py-2 font-dm-sans text-[13px] font-semibold text-subtle hover:bg-border-light transition-colors">
+                <Icon name="calendar" size={14} />
+                Planifier
+              </Link>
+              <Link href="/sante/traitement/nouveau" className="flex items-center gap-1.5 rounded-[6px] bg-primary px-3.5 py-2 font-dm-sans text-[13px] font-semibold text-white hover:bg-primary/90 transition-colors">
+                <Icon name="plus" size={14} />
+                Nouveau traitement
+              </Link>
+            </>
+          )}
+        </div>
       </header>
 
       <SanteTabs />

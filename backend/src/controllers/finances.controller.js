@@ -2,6 +2,7 @@ const asyncHandler = require('../utils/asyncHandler');
 const ApiError = require('../utils/ApiError');
 const Animal = require('../models/Animal');
 const Parametres = require('../models/Parametres');
+const { streamRapportFinancier } = require('../utils/pdfGenerator');
 
 async function getPrix() {
   const p = await Parametres.findOne();
@@ -70,6 +71,30 @@ exports.bilanTroupeau = asyncHandler(async (req, res) => {
       prixVente,
       prixAchat,
     },
+  });
+});
+
+// GET /api/finances/rapport — rapport financier du troupeau (PDF)
+exports.rapport = asyncHandler(async (req, res) => {
+  const { prixVente, prixAchat } = await getPrix();
+  const params = await Parametres.findOne();
+  const actifs = await Animal.find({ statut: 'Actif' }).populate('race', 'nom poidsAbattage');
+  const animaux = actifs.map((a) => calcAnimal(a, prixVente, prixAchat));
+
+  const coutTotal = animaux.reduce((s, a) => s + a.coutTotal, 0);
+  const revenuTotal = animaux.reduce((s, a) => s + a.revenu, 0);
+  const beneficeTotal = revenuTotal - coutTotal;
+  const margeGlobale = coutTotal > 0 ? Math.round((beneficeTotal / coutTotal) * 100) : 0;
+  const nbRentables = animaux.filter((a) => a.marge > 0).length;
+
+  res.setHeader('Content-Type', 'application/pdf');
+  res.setHeader('Content-Disposition', 'attachment; filename="rapport-financier.pdf"');
+
+  streamRapportFinancier(res, {
+    ferme: params?.nomFerme || 'BOVITRACK',
+    total: animaux.length,
+    kpis: { coutTotal, revenuTotal, beneficeTotal, margeGlobale, nbRentables, total: animaux.length },
+    animaux: [...animaux].sort((a, b) => b.marge - a.marge),
   });
 });
 

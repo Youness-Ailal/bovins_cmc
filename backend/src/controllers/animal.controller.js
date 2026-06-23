@@ -5,7 +5,9 @@ const Pesee = require('../models/Pesee');
 const Traitement = require('../models/Traitement');
 const Parcelle = require('../models/Parcelle');
 const Alerte = require('../models/Alerte');
+const Parametres = require('../models/Parametres');
 const { computeGMQ } = require('../utils/calculations');
+const { streamPasseport, streamLaissezPasser } = require('../utils/pdfGenerator');
 
 const PHASES = ['Veau', 'Croissance', 'Engraissement', 'Finition'];
 
@@ -206,4 +208,80 @@ exports.sortie = asyncHandler(async (req, res) => {
   }
 
   res.json({ success: true, data: animal });
+});
+
+// ─── Documents PDF (Plan 05) ──────────────────────────────────────────────────
+// GET /api/animaux/:id/passeport — Passeport bovin officiel (ONSSA)
+exports.passeport = asyncHandler(async (req, res) => {
+  const animal = await Animal.findById(req.params.id)
+    .populate('race', 'nom')
+    .populate('parcelle', 'nom');
+  if (!animal) throw ApiError.notFound('Animal introuvable');
+
+  const [pesees, vaccinations, params] = await Promise.all([
+    Pesee.find({ animal: animal._id }).sort('-date'),
+    Traitement.find({ animal: animal._id, type: 'Vaccin' }).sort('-dateDebut'),
+    Parametres.findOne(),
+  ]);
+
+  res.setHeader('Content-Type', 'application/pdf');
+  res.setHeader('Content-Disposition', `attachment; filename="passeport-${animal.identifiant}.pdf"`);
+
+  streamPasseport(res, {
+    numeroSNIT: animal.nni || '—',
+    identifiantFerme: animal.identifiant,
+    race: animal.race?.nom || '—',
+    sexe: animal.sexe,
+    phase: animal.phase,
+    dateNaissance: animal.dateEntree,
+    etatSante: animal.etatSante,
+    proprietaire: {
+      ferme: params?.nomFerme || '—',
+      responsable: params?.responsable || '—',
+      adresse: params?.adresse || '—',
+      region: params?.adresse || '—',
+    },
+    pesees: pesees.map((p) => ({ date: p.date, poids: p.poids, gmq: p.gmq, observateur: p.observateur || '—' })),
+    vaccinations: vaccinations.map((v) => ({ produit: v.produit, date: v.dateDebut, veterinaire: v.veterinaire || '—' })),
+  });
+});
+
+// GET /api/animaux/:id/laissez-passer — Laissez-passer de transport (validité 72h)
+// Destination fields come from the query string (filled in by the frontend modal).
+exports.laissezPasser = asyncHandler(async (req, res) => {
+  const animal = await Animal.findById(req.params.id).populate('race', 'nom');
+  if (!animal) throw ApiError.notFound('Animal introuvable');
+
+  const params = await Parametres.findOne();
+  const { destination, province, transporteur, immatriculation } = req.query;
+
+  const dateDepart = new Date();
+  const dateExpiration = new Date(dateDepart.getTime() + 72 * 60 * 60 * 1000);
+  const numero = `LP-${dateDepart.getTime().toString(36).toUpperCase()}`;
+
+  res.setHeader('Content-Type', 'application/pdf');
+  res.setHeader('Content-Disposition', `attachment; filename="laissez-passer-${animal.identifiant}.pdf"`);
+
+  streamLaissezPasser(res, {
+    numero,
+    animal: {
+      snit: animal.nni || animal.identifiant,
+      race: animal.race?.nom || '—',
+      sexe: animal.sexe,
+      poids: animal.poidsActuel,
+    },
+    origine: {
+      ferme: params?.nomFerme || '—',
+      adresse: params?.adresse || '—',
+      province: params?.adresse || '—',
+    },
+    destination: {
+      lieu: destination || '—',
+      province: province || '—',
+      transporteur: transporteur || '—',
+      immatriculation: immatriculation || '—',
+    },
+    dateDepart,
+    dateExpiration,
+  });
 });

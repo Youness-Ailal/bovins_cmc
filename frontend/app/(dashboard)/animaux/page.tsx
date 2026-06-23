@@ -8,6 +8,7 @@ import TableSkeleton from "@/components/ui/TableSkeleton";
 import { useApi } from "@/lib/useApi";
 import { useAuth } from "@/lib/auth";
 import { can } from "@/lib/permissions";
+import { exportCsv } from "@/lib/exportCsv";
 import type { Animal, Race } from "@/lib/types";
 
 const SANTE_STYLE: Record<string, { bg: string; text: string; dot: string }> = {
@@ -63,6 +64,21 @@ export default function ListeAnimauxPage() {
   const alertes = list.filter((a) => a.etatSante !== "Sain").length;
   const pretsCount = list.filter((a) => a.phase === "Finition" && a.statut === "Actif").length;
 
+  function handleExportCsv() {
+    exportCsv<Animal>(`animaux-${new Date().toISOString().slice(0, 10)}`, [
+      { header: "Identifiant", value: (a) => a.identifiant },
+      { header: "Race", value: (a) => a.race?.nom ?? "" },
+      { header: "Sexe", value: (a) => a.sexe },
+      { header: "Phase", value: (a) => a.phase },
+      { header: "Parcelle", value: (a) => a.parcelle?.nom ?? "" },
+      { header: "État santé", value: (a) => a.etatSante },
+      { header: "Poids actuel (kg)", value: (a) => a.poidsActuel },
+      { header: "Poids entrée (kg)", value: (a) => a.poidsEntree },
+      { header: "GMQ (kg/j)", value: (a) => a.gmqActuel },
+      { header: "Statut", value: (a) => a.statut },
+    ], filtered);
+  }
+
   return (
     <div className="flex flex-1 flex-col overflow-hidden bg-surface" onClick={() => setOpenFilter(null)}>
       {/* Header */}
@@ -73,12 +89,22 @@ export default function ListeAnimauxPage() {
             {list.length}
           </span>
         </div>
-        {canManage && (
-          <Link href="/animaux/nouveau" className="flex items-center gap-1.5 rounded-[6px] bg-primary px-3.5 py-2 font-dm-sans text-[13px] font-semibold text-white hover:bg-primary/90 transition-colors">
-            <Icon name="plus" size={14} />
-            Nouvel animal
-          </Link>
-        )}
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleExportCsv}
+            disabled={filtered.length === 0}
+            className="flex items-center gap-1.5 rounded-[6px] border border-border-light bg-surface px-3.5 py-2 font-dm-sans text-[13px] font-semibold text-subtle hover:bg-border-light transition-colors disabled:opacity-50"
+          >
+            <Icon name="file-text" size={14} />
+            Exporter CSV
+          </button>
+          {canManage && (
+            <Link href="/animaux/nouveau" className="flex items-center gap-1.5 rounded-[6px] bg-primary px-3.5 py-2 font-dm-sans text-[13px] font-semibold text-white hover:bg-primary/90 transition-colors">
+              <Icon name="plus" size={14} />
+              Nouvel animal
+            </Link>
+          )}
+        </div>
       </header>
 
       <div className="flex flex-1 flex-col gap-4 overflow-auto p-6">

@@ -1,13 +1,14 @@
 const mongoose = require('mongoose');
+const config = require('./env');
 
 /**
  * Connect to MongoDB. Exits the process on failure so the server never
  * runs in a half-broken state.
  */
 async function connectDB() {
-  const uri = process.env.MONGO_URI;
+  const uri = config.mongoUri;
   if (!uri) {
-    console.error('MONGO_URI is not defined in environment');
+    console.error('MONGO_URI is not defined');
     process.exit(1);
   }
 

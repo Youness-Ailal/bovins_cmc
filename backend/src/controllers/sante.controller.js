@@ -6,7 +6,9 @@ const PlanTraitement = require('../models/PlanTraitement');
 const Animal = require('../models/Animal');
 const StockArticle = require('../models/StockArticle');
 const Alerte = require('../models/Alerte');
+const Parametres = require('../models/Parametres');
 const { checkLowStock } = require('./stock.controller');
+const { streamCarnet, streamRegistreTraitements } = require('../utils/pdfGenerator');
 
 // ─── Traitements (UC-12) ──────────────────────────────────────────────────────
 exports.listTraitements = asyncHandler(async (req, res) => {
@@ -128,4 +130,87 @@ exports.removePlan = asyncHandler(async (req, res) => {
   const plan = await PlanTraitement.findByIdAndDelete(req.params.id);
   if (!plan) throw ApiError.notFound();
   res.json({ success: true, data: { id: req.params.id } });
+});
+
+// ─── Carnet de santé PDF (Plan 05) ────────────────────────────────────────────
+// GET /api/sante/animal/:id/carnet
+exports.carnet = asyncHandler(async (req, res) => {
+  const animal = await Animal.findById(req.params.id)
+    .populate('race', 'nom')
+    .populate('parcelle', 'nom');
+  if (!animal) throw ApiError.notFound('Animal introuvable');
+
+  const [etats, traitements, plans] = await Promise.all([
+    EtatSante.find({ animal: animal._id }).sort('-date'),
+    Traitement.find({ animal: animal._id }).sort('-dateDebut'),
+    PlanTraitement.find({ animal: animal._id }).sort('datePrevue'),
+  ]);
+
+  const now = new Date();
+  const delaiActif = animal.delaiRetraitFin && animal.delaiRetraitFin > now ? animal.delaiRetraitFin : null;
+
+  res.setHeader('Content-Type', 'application/pdf');
+  res.setHeader('Content-Disposition', `attachment; filename="carnet-sante-${animal.identifiant}.pdf"`);
+
+  streamCarnet(res, {
+    identite: {
+      identifiant: animal.identifiant,
+      nni: animal.nni || '—',
+      race: animal.race?.nom || '—',
+      sexe: animal.sexe,
+      phase: animal.phase,
+      parcelle: animal.parcelle?.nom || '—',
+      etatSante: animal.etatSante,
+    },
+    delaiRetrait: delaiActif,
+    etats: etats.map((e) => ({
+      date: e.date,
+      etat: e.etat,
+      temperature: e.temperature,
+      observation: e.symptomes || e.action || '—',
+    })),
+    traitements: traitements.map((t) => ({
+      produit: t.produit,
+      type: t.type,
+      dose: `${t.dose || 0} ${t.doseUnite || ''}`.trim(),
+      periode: t.dateFin
+        ? `${new Date(t.dateDebut).toLocaleDateString('fr-FR')} → ${new Date(t.dateFin).toLocaleDateString('fr-FR')}`
+        : `${new Date(t.dateDebut).toLocaleDateString('fr-FR')} (en cours)`,
+      veterinaire: t.veterinaire || '—',
+    })),
+    plans: plans.map((p) => ({
+      type: p.type,
+      produit: p.produit || '—',
+      datePrevue: p.datePrevue,
+      frequence: p.frequence,
+      statut: p.statut,
+    })),
+  });
+});
+
+// GET /api/sante/traitements/registre — registre vétérinaire (PDF, tous les traitements)
+exports.registreTraitements = asyncHandler(async (req, res) => {
+  const [traitements, params] = await Promise.all([
+    Traitement.find().populate('animal', 'identifiant').sort('-dateDebut'),
+    Parametres.findOne(),
+  ]);
+
+  res.setHeader('Content-Type', 'application/pdf');
+  res.setHeader('Content-Disposition', 'attachment; filename="registre-traitements.pdf"');
+
+  streamRegistreTraitements(res, {
+    ferme: params?.nomFerme || 'BOVITRACK',
+    total: traitements.length,
+    traitements: traitements.map((t) => ({
+      animal: t.animal?.identifiant || '—',
+      dateDebut: t.dateDebut,
+      produit: t.produit,
+      type: t.type,
+      dose: `${t.dose || 0} ${t.doseUnite || ''}`.trim(),
+      voie: t.voie || '—',
+      veterinaire: t.veterinaire || '—',
+      delaiRetrait: t.delaiRetrait || 0,
+      statut: t.statut,
+    })),
+  });
 });

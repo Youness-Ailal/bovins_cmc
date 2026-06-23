@@ -1,6 +1,7 @@
 const jwt = require('jsonwebtoken');
 const ApiError = require('../utils/ApiError');
 const User = require('../models/User');
+const config = require('../config/env');
 
 /**
  * Verifies the Bearer token and attaches the user to req.user.
@@ -11,7 +12,7 @@ async function protect(req, res, next) {
     const token = header.startsWith('Bearer ') ? header.slice(7) : null;
     if (!token) throw ApiError.unauthorized('Token manquant');
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = jwt.verify(token, config.jwt.secret);
     const user = await User.findById(decoded.id).select('-password');
     if (!user) throw ApiError.unauthorized('Utilisateur introuvable');
     if (user.statut === 'Inactif') throw ApiError.forbidden('Compte désactivé');

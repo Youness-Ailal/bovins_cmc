@@ -2,10 +2,11 @@ const jwt = require('jsonwebtoken');
 const asyncHandler = require('../utils/asyncHandler');
 const ApiError = require('../utils/ApiError');
 const User = require('../models/User');
+const config = require('../config/env');
 
 function signToken(user) {
-  return jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, {
-    expiresIn: process.env.JWT_EXPIRES_IN || '7d',
+  return jwt.sign({ id: user._id, role: user.role }, config.jwt.secret, {
+    expiresIn: config.jwt.expiresIn,
   });
 }
 

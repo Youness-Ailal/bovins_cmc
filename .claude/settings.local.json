@@ -47,7 +47,8 @@
       "Bash(netstat -tlnp)",
       "Bash(fuser -k 3001/tcp)",
       "Bash(python *)",
-      "Bash(node *)"
+      "Bash(node *)",
+      "Skill(codex:rescue)"
     ]
   }
 }
