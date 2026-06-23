@@ -112,7 +112,7 @@ async function run() {
     { identifiant: 'ANI-012', race: 'Holstein', sexe: 'Mâle', phase: 'Engraissement', parcelle: 'Parcelle Beta', etatSante: 'En traitement', poidsActuel: 380, gmqActuel: 0.88, coutCumule: 10200 },
     { identifiant: 'ANI-019', race: 'Charolais', sexe: 'Mâle', phase: 'Finition', parcelle: 'Parcelle Beta', etatSante: 'Sain', poidsActuel: 495, gmqActuel: 1.41, coutCumule: 18200 },
     { identifiant: 'ANI-022', race: 'Angus', sexe: 'Femelle', phase: 'Finition', parcelle: 'Parcelle Alpha', etatSante: 'Sain', poidsActuel: 482, gmqActuel: 1.2, coutCumule: 12900 },
-    { identifiant: 'ANI-031', race: 'Angus', sexe: 'Mâle', phase: 'Engraissement', parcelle: 'Parcelle Gamma', etatSante: 'En observation', poidsActuel: 360, gmqActuel: 0.79, coutCumule: 9100 },
+    { identifiant: 'ANI-031', race: 'Angus', sexe: 'Mâle', phase: 'Engraissement', parcelle: 'Parcelle Gamma', etatSante: 'En traitement', poidsActuel: 360, gmqActuel: 0.79, coutCumule: 9100 },
     { identifiant: 'ANI-047', race: 'Limousin', sexe: 'Mâle', phase: 'Croissance', parcelle: 'Parcelle Gamma', etatSante: 'Malade', poidsActuel: 290, gmqActuel: 0.78, coutCumule: 7800 },
   ];
   const animals = await Animal.create(
@@ -159,7 +159,7 @@ async function run() {
   await EtatSante.create([
     { animal: animalByCode['ANI-012']._id, date: new Date('2026-06-02'), etat: 'En traitement', temperature: 39.2 },
     { animal: animalByCode['ANI-047']._id, date: new Date('2026-06-02'), etat: 'Malade', temperature: 40.1 },
-    { animal: animalByCode['ANI-031']._id, date: new Date('2026-06-01'), etat: 'En observation', temperature: 38.7 },
+    { animal: animalByCode['ANI-031']._id, date: new Date('2026-06-01'), etat: 'En traitement', temperature: 38.7 },
   ]);
 
   // ── Plans de traitement ──

@@ -15,5 +15,7 @@ router.use('/sante', require('./sante.routes'));
 router.use('/alertes', require('./alerte.routes'));
 router.use('/dashboard', require('./dashboard.routes'));
 router.use('/parametres', require('./parametres.routes'));
+router.use('/finances',      require('./finances.routes'));
+router.use('/fournisseurs',  require('./fournisseur.routes'));
 
 module.exports = router;

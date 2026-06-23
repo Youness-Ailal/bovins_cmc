@@ -7,7 +7,7 @@ const etatSanteSchema = new mongoose.Schema(
     date: { type: Date, default: Date.now },
     etat: {
       type: String,
-      enum: ['Sain', 'En observation', 'En traitement', 'Malade'],
+      enum: ['Sain', 'En traitement', 'Malade'],
       required: true,
     },
     temperature: { type: Number, default: null },

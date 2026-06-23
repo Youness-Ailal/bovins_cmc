@@ -13,6 +13,8 @@ const parametresSchema = new mongoose.Schema(
     frequencePesee: { type: Number, default: 14 },
     seuilIC: { type: Number, default: 7.5 },
     poidsMinVente: { type: Number, default: 400 },
+    prixVenteKgMoyen: { type: Number, default: 35 },   // MAD / kg poids vif
+    prixAchatKgMoyen: { type: Number, default: 30 },   // MAD / kg à l'achat
     notifs: {
       email: { type: Boolean, default: true },
       rapport: { type: Boolean, default: false },

@@ -5,21 +5,25 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import Icon from "@/components/ui/Icon";
 import { useAuth } from "@/lib/auth";
+import { isAdmin } from "@/lib/permissions";
 
 const NAV = [
-  { href: "/dashboard", icon: "layout-dashboard", label: "Tableau de bord", match: ["/dashboard"] },
-  { href: "/animaux", icon: "scan-line", label: "Animaux", match: ["/animaux"] },
-  { href: "/parcelles", icon: "map-pin", label: "Parcelles", match: ["/parcelles"] },
-  { href: "/stocks", icon: "package", label: "Stock", match: ["/stocks"] },
-  { href: "/rations", icon: "utensils", label: "Rations", match: ["/rations"] },
-  { href: "/sante", icon: "heart-pulse", label: "Santé", match: ["/sante"] },
-  { href: "/performance", icon: "bell", label: "Alertes", match: ["/performance"] },
-  { href: "/administration", icon: "settings", label: "Administration", match: ["/administration"] },
+  { href: "/dashboard", icon: "layout-dashboard", label: "Tableau de bord", match: ["/dashboard"], adminOnly: false },
+  { href: "/animaux", icon: "scan-line", label: "Animaux", match: ["/animaux"], adminOnly: false },
+  { href: "/parcelles", icon: "map-pin", label: "Parcelles", match: ["/parcelles"], adminOnly: false },
+  { href: "/stocks", icon: "package", label: "Stock", match: ["/stocks"], adminOnly: false },
+  { href: "/rations", icon: "utensils", label: "Rations", match: ["/rations"], adminOnly: false },
+  { href: "/sante", icon: "heart-pulse", label: "Santé", match: ["/sante"], adminOnly: false },
+  { href: "/finances", icon: "trending-up", label: "Finances", match: ["/finances"], adminOnly: false },
+  { href: "/fournisseurs", icon: "truck", label: "Fournisseurs", match: ["/fournisseurs"], adminOnly: false },
+  { href: "/performance", icon: "bell", label: "Alertes", match: ["/performance"], adminOnly: false },
+  { href: "/administration", icon: "settings", label: "Administration", match: ["/administration"], adminOnly: true },
 ];
 
 export default function Sidebar() {
   const pathname = usePathname();
   const { user, logout } = useAuth();
+  const nav = NAV.filter((item) => !item.adminOnly || isAdmin(user?.role));
 
   function isActive(match: string[]) {
     return match.some((m) => pathname.startsWith(m));
@@ -41,7 +45,7 @@ export default function Sidebar() {
         <p className="mb-2 px-3 font-inter text-[11px] font-semibold tracking-[0.07em] text-placeholder">
           MENU PRINCIPAL
         </p>
-        {NAV.map(({ href, icon, label, match }) => {
+        {nav.map(({ href, icon, label, match }) => {
           const active = isActive(match);
           return (
             <Link

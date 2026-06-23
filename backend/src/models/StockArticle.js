@@ -15,7 +15,7 @@ const stockArticleSchema = new mongoose.Schema(
     seuil: { type: Number, default: 0, min: 0 },
     prixUnitaire: { type: Number, default: 0, min: 0 },
     datePeremption: { type: Date, default: null },
-    fournisseur: { type: String, default: '' },
+    fournisseur: { type: mongoose.Schema.Types.ObjectId, ref: 'Fournisseur', default: null, set: (v) => v || null },
     notes: { type: String, default: '' },
   },
   { timestamps: true }

@@ -7,9 +7,13 @@ import { alerteNiveauStyle } from "@/lib/statusStyles";
 import { useApi } from "@/lib/useApi";
 import { api } from "@/lib/api";
 import { useToast } from "@/components/ui/Toast";
+import { useAuth } from "@/lib/auth";
+import { can } from "@/lib/permissions";
 import type { Alerte } from "@/lib/types";
 
 export default function PerformancePage() {
+  const { user } = useAuth();
+  const canManage = can(user?.role, "manageAlertes");
   const { data: alertes, loading, error, refetch } = useApi<Alerte[]>("/alertes");
   const { success, error: toastError } = useToast();
   const list = alertes ?? [];
@@ -50,12 +54,12 @@ export default function PerformancePage() {
     },
     {
       key: "_actions", label: "Actions", width: "w-[80px]", align: "right",
-      render: (r) => (
+      render: (r) => canManage ? (
         <div className="flex items-center justify-end gap-2">
           {!r.traitee && <button onClick={() => marquerTraitee(r.id)} title="Marquer comme traitée" className="text-placeholder hover:text-success transition-colors"><Icon name="check" size={15} /></button>}
           <button onClick={() => ignorer(r.id)} title="Supprimer" className="text-placeholder hover:text-danger transition-colors"><Icon name="x" size={15} /></button>
         </div>
-      ),
+      ) : null,
     },
   ];
 

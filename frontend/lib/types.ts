@@ -43,7 +43,7 @@ export interface Animal {
   poidsActuel: number;
   dateEntree: string;
   parcelle: Ref | null;
-  etatSante: "Sain" | "En observation" | "En traitement" | "Malade";
+  etatSante: "Sain" | "En traitement" | "Malade";
   gmqActuel: number;
   coutCumule: number;
   statut: "Actif" | "Sorti";
@@ -88,7 +88,7 @@ export interface StockArticle {
   seuil: number;
   prixUnitaire: number;
   datePeremption: string | null;
-  fournisseur: string;
+  fournisseur: (Ref & { nom?: string; region?: string; type?: string }) | null;
   notes: string;
   statut: "OK" | "Faible" | "Critique";
 }
@@ -99,9 +99,12 @@ export interface StockMouvement {
   type: "entree" | "sortie" | "ajustement";
   quantite: number;
   quantiteApres: number;
+  prixUnitaire: number;
   date: string;
   motif: string;
+  notes: string;
   utilisateur: { prenom?: string; nom?: string } | null;
+  commandeSource: (Ref & { fournisseur?: Ref; montantTotal?: number; date?: string }) | null;
 }
 
 export interface Ingredient {
@@ -200,6 +203,75 @@ export interface Parametres {
   poidsMinVente: number;
   notifs: { email: boolean; rapport: boolean; pesee: boolean; stock: boolean };
   alertesConfig?: AlerteConfig[];
+}
+
+export interface FinancesAnimal {
+  id: string;
+  identifiant: string;
+  race: string;
+  phase: string;
+  poidsEntree: number;
+  poidsActuel: number;
+  gmqActuel: number;
+  coutAchat: number;
+  coutAlimentation: number;
+  coutSante: number;
+  coutTotal: number;
+  revenu: number;
+  benefice: number;
+  marge: number;
+  jours: number;
+  coutJour?: number;
+  prixVente?: number;
+  prixAchat?: number;
+}
+
+export interface FinancesTroupeau {
+  kpis: {
+    coutTotal: number;
+    revenuTotal: number;
+    beneficeTotal: number;
+    margeGlobale: number;
+    nbRentables: number;
+    total: number;
+  };
+  top5: FinancesAnimal[];
+  bottom5: FinancesAnimal[];
+  animaux: FinancesAnimal[];
+  prixVente: number;
+  prixAchat: number;
+}
+
+export interface ArticleHabituel {
+  article: Ref & { designation?: string; unite?: string; prixUnitaire?: number };
+  prixHabituel: number;
+}
+
+export interface Fournisseur {
+  id: string;
+  nom: string;
+  contact: string;
+  region: string;
+  type: "Aliments" | "Médicaments" | "Équipements" | "Autre";
+  articlesHabituels: ArticleHabituel[];
+  notes: string;
+  nbCommandes?: number;
+  commandes?: CommandeAchat[];
+}
+
+export interface LigneCommande {
+  article: Ref & { designation?: string; unite?: string };
+  quantite: number;
+  prixUnitaire: number;
+}
+
+export interface CommandeAchat {
+  id: string;
+  fournisseur: Ref & { nom?: string; region?: string; type?: string };
+  date: string;
+  lignes: LigneCommande[];
+  montantTotal: number;
+  notes: string;
 }
 
 export interface AlerteConfig {

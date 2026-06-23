@@ -5,6 +5,8 @@ import Icon from "@/components/ui/Icon";
 import { useApi } from "@/lib/useApi";
 import { useAuth } from "@/lib/auth";
 import type { DashboardSummary, Animal, Traitement } from "@/lib/types";
+import TroupeauBarChart from "@/components/dashboard/TroupeauBarChart";
+import CoutsDonutChart from "@/components/dashboard/CoutsDonutChart";
 
 interface Rentabilite { alimentation: number; veterinaire: number; achat: number; total: number; }
 
@@ -39,10 +41,7 @@ export default function DashboardPage() {
   const initials = user ? `${user.prenom?.[0] ?? ""}${user.nom?.[0] ?? ""}`.toUpperCase() : "—";
 
   const rep = data?.repartition ?? {};
-  const maxRep = Math.max(1, ...Object.values(rep));
-  const phaseColors: Record<string, string> = { Veau: "bg-primary", Croissance: "bg-primary", Jeunes: "bg-accent-gold", Engraissement: "bg-accent-gold", Adultes: "bg-accent-warm", Finition: "bg-accent-warm" };
-  const repEntries = Object.entries(rep);
-  const totalAnimaux = repEntries.reduce((s, [, n]) => s + n, 0);
+  const totalAnimaux = Object.values(rep).reduce((s, n) => s + n, 0);
 
   return (
     <div className="flex flex-1 flex-col overflow-hidden bg-surface">
@@ -97,15 +96,7 @@ export default function DashboardPage() {
               {/* Répartition par phase */}
               <div className="flex flex-1 flex-col gap-3 rounded-[12px] border border-border-light bg-card p-5">
                 <span className="font-dm-sans text-[15px] font-semibold text-label">Répartition par phase</span>
-                <div className="flex flex-1 items-end gap-5 px-3 pt-4" style={{ minHeight: 180 }}>
-                  {repEntries.map(([phase, n]) => (
-                    <div key={phase} className="flex flex-1 flex-col items-center gap-1">
-                      <span className="font-dm-sans text-[14px] font-bold text-label">{n}</span>
-                      <div className={`w-full rounded-t-[6px] ${phaseColors[phase] ?? "bg-primary"}`} style={{ height: `${(n / maxRep) * 150}px` }} />
-                      <span className="font-inter text-[11px] font-medium text-placeholder">{phase}</span>
-                    </div>
-                  ))}
-                </div>
+                <TroupeauBarChart repartition={rep} />
                 <div className="flex items-center justify-between border-t border-border-light pt-2">
                   <span className="font-inter text-[12px] font-medium text-subtle">Total : {totalAnimaux} animaux actifs</span>
                   <ViewLink href="/animaux" label="Voir détails" />
@@ -116,23 +107,13 @@ export default function DashboardPage() {
               <div className="flex flex-1 flex-col gap-4 rounded-[12px] border border-border-light bg-card p-5">
                 <div className="flex items-center gap-2">
                   <Icon name="wallet" size={16} className="text-primary" />
-                  <span className="font-dm-sans text-[15px] font-semibold text-label">Rentabilité troupeau</span>
+                  <span className="font-dm-sans text-[15px] font-semibold text-label">Répartition des coûts</span>
                 </div>
-                <div className="flex flex-col gap-2">
-                  {[
-                    { dot: "bg-accent-warm", label: "Alimentation", value: renta?.alimentation ?? 0 },
-                    { dot: "bg-info", label: "Vétérinaire", value: renta?.veterinaire ?? 0 },
-                    { dot: "bg-accent-gold", label: "Achat animaux", value: renta?.achat ?? 0 },
-                  ].map(({ dot, label, value }) => (
-                    <div key={label} className="flex items-center justify-between rounded-[6px] bg-surface-alt px-2.5 py-1.5">
-                      <div className="flex items-center gap-1.5">
-                        <div className={`h-2 w-2 rounded-[2px] ${dot}`} />
-                        <span className="font-inter text-[12px] font-medium text-label">{label}</span>
-                      </div>
-                      <span className="font-dm-sans text-[13px] font-semibold text-label">{value.toLocaleString("fr-FR")} MAD</span>
-                    </div>
-                  ))}
-                </div>
+                <CoutsDonutChart
+                  alimentation={renta?.alimentation ?? 0}
+                  veterinaire={renta?.veterinaire ?? 0}
+                  achat={renta?.achat ?? 0}
+                />
                 <div className="h-px bg-border-light" />
                 <div className="flex items-center justify-between">
                   <span className="font-inter text-[13px] font-semibold text-label">Coût total</span>

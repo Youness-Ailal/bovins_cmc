@@ -148,6 +148,7 @@ exports.changePhase = asyncHandler(async (req, res) => {
   if (!PHASES.includes(next)) throw ApiError.badRequest('Phase invalide');
 
   animal.phase = next;
+  if (!['Sain', 'En traitement', 'Malade'].includes(animal.etatSante)) animal.etatSante = 'Sain';
   await animal.save();
 
   await Alerte.create({
@@ -157,6 +158,19 @@ exports.changePhase = asyncHandler(async (req, res) => {
     concerne: animal.identifiant,
   });
 
+  res.json({ success: true, data: animal });
+});
+
+// ─── Changer l'état de santé ─────────────────────────────────────────────────
+// PATCH /api/animaux/:id/sante  { etatSante }
+const ETATS_SANTE = ['Sain', 'En traitement', 'Malade'];
+exports.changeEtatSante = asyncHandler(async (req, res) => {
+  const { etatSante } = req.body;
+  if (!ETATS_SANTE.includes(etatSante)) throw ApiError.badRequest('État de santé invalide');
+  const animal = await Animal.findById(req.params.id);
+  if (!animal) throw ApiError.notFound();
+  animal.etatSante = etatSante;
+  await animal.save();
   res.json({ success: true, data: animal });
 });
 
@@ -178,6 +192,8 @@ exports.sortie = asyncHandler(async (req, res) => {
   animal.statut = 'Sorti';
   animal.parcelle = null;
   animal.sortie = { motif, date: date ? new Date(date) : new Date(), poids, prix, notes };
+  // Sanitize legacy value removed from enum
+  if (!['Sain', 'En traitement', 'Malade'].includes(animal.etatSante)) animal.etatSante = 'Sain';
   await animal.save();
 
   if (motif === 'mort') {

@@ -6,6 +6,8 @@ import Icon from "@/components/ui/Icon";
 import { useSaveToast } from "@/lib/useSaveToast";
 import { useToast } from "@/components/ui/Toast";
 import { api } from "@/lib/api";
+import { useApi } from "@/lib/useApi";
+import type { Fournisseur } from "@/lib/types";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
@@ -30,7 +32,9 @@ const CAT_MAP: Record<string, string> = {
 export default function NouvelArticlePage() {
   const [unite, setUnite] = useState("kg");
   const [categorie, setCategorie] = useState("");
+  const [fournisseurId, setFournisseurId] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const { data: fournisseurs } = useApi<Fournisseur[]>("/fournisseurs");
 
   const notifySaved = useSaveToast();
   const { error: toastError } = useToast();
@@ -52,7 +56,7 @@ export default function NouvelArticlePage() {
         seuil: Number(fd.get("seuil")) || 0,
         prixUnitaire: Number(fd.get("prixUnitaire")) || 0,
         datePeremption: fd.get("datePeremption") || null,
-        fournisseur: String(fd.get("fournisseur") || ""),
+        fournisseur: fournisseurId || undefined,
         notes: String(fd.get("notes") || ""),
       });
       notifySaved("Article ajouté au stock", "/stocks");
@@ -152,8 +156,17 @@ export default function NouvelArticlePage() {
                 </FormField>
               </div>
 
-              <FormField label="Fournisseur">
-                <input type="text" name="fournisseur" placeholder="Nom du fournisseur…" className={inputCls} />
+              <FormField label="Fournisseur (optionnel)">
+                <select
+                  value={fournisseurId}
+                  onChange={(e) => setFournisseurId(e.target.value)}
+                  className={inputCls}
+                >
+                  <option value="">— Aucun —</option>
+                  {(fournisseurs ?? []).map((f) => (
+                    <option key={f.id} value={f.id}>{f.nom} ({f.type})</option>
+                  ))}
+                </select>
               </FormField>
 
               <FormField label="Notes">

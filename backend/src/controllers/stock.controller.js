@@ -18,12 +18,15 @@ async function checkLowStock(article) {
 
 // ─── Articles ─────────────────────────────────────────────────────────────────
 exports.listArticles = asyncHandler(async (req, res) => {
-  const articles = await StockArticle.find().sort('designation');
+  const articles = await StockArticle.find()
+    .populate('fournisseur', 'nom region type')
+    .sort('designation');
   res.json({ success: true, data: articles, meta: { total: articles.length } });
 });
 
 exports.getArticle = asyncHandler(async (req, res) => {
-  const article = await StockArticle.findById(req.params.id);
+  const article = await StockArticle.findById(req.params.id)
+    .populate('fournisseur', 'nom region type');
   if (!article) throw ApiError.notFound();
   res.json({ success: true, data: article });
 });
@@ -34,7 +37,10 @@ exports.createArticle = asyncHandler(async (req, res) => {
 });
 
 exports.updateArticle = asyncHandler(async (req, res) => {
-  const article = await StockArticle.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
+  const body = { ...req.body };
+  if ('fournisseur' in body && !body.fournisseur) body.fournisseur = null;
+  const article = await StockArticle.findByIdAndUpdate(req.params.id, body, { new: true, runValidators: true })
+    .populate('fournisseur', 'nom region type');
   if (!article) throw ApiError.notFound();
   res.json({ success: true, data: article });
 });
@@ -53,6 +59,7 @@ exports.listMouvements = asyncHandler(async (req, res) => {
   const mouvements = await StockMouvement.find(filter)
     .populate('article', 'designation unite')
     .populate('utilisateur', 'prenom nom')
+    .populate('commandeSource', 'fournisseur date montantTotal')
     .sort('-date');
   res.json({ success: true, data: mouvements, meta: { total: mouvements.length } });
 });
@@ -73,6 +80,7 @@ exports.createMouvement = asyncHandler(async (req, res) => {
 
   article.quantite = nouvelleQuantite;
   if (type === 'entree' && prixUnitaire) article.prixUnitaire = prixUnitaire;
+  if (!article.fournisseur) article.fournisseur = null; // coerce legacy "" values
   await article.save();
 
   const mouvement = await StockMouvement.create({

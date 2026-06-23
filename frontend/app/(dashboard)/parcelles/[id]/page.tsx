@@ -16,7 +16,7 @@ const PHASE_VARIANT: Record<string, string> = {
   Veau: "phase-croissance", Croissance: "phase-croissance", Engraissement: "phase-engraissement", Finition: "phase-finition",
 };
 const SANTE_VARIANT: Record<string, string> = {
-  Sain: "sain", "En observation": "phase-croissance", "En traitement": "phase-engraissement", Malade: "malade",
+  Sain: "sain", "En traitement": "phase-engraissement", Malade: "malade",
 };
 
 function StatCard({ label, value, valueColor, valueSizeClass }: { label: string; value: string; valueColor: string; valueSizeClass?: string }) {

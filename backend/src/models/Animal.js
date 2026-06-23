@@ -21,7 +21,7 @@ const animalSchema = new mongoose.Schema(
     parcelle: { type: mongoose.Schema.Types.ObjectId, ref: 'Parcelle', default: null },
     etatSante: {
       type: String,
-      enum: ['Sain', 'En observation', 'En traitement', 'Malade'],
+      enum: ['Sain', 'En traitement', 'Malade'],
       default: 'Sain',
     },
     gmqActuel: { type: Number, default: 0 },

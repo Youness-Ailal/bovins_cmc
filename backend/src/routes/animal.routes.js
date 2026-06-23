@@ -1,22 +1,24 @@
 const router = require('express').Router();
 const c = require('../controllers/animal.controller');
-const { protect } = require('../middleware/auth');
+const { protect, restrictTo } = require('../middleware/auth');
+const { GESTION_FERME, SAISIE_TERRAIN, SAISIE_SORTIE } = require('../config/roles');
 
 router.use(protect);
 
 router.get('/prets-a-vendre', c.pretsAVendre);
 router.get('/', c.list);
-router.post('/', c.create);
+router.post('/', restrictTo(...GESTION_FERME), c.create);
 router.get('/:id', c.getOne);
-router.put('/:id', c.update);
-router.delete('/:id', c.remove);
+router.put('/:id', restrictTo(...GESTION_FERME), c.update);
+router.delete('/:id', restrictTo(...GESTION_FERME), c.remove);
 
-// Pesées
+// Pesées — any active role can log a weighing
 router.get('/:id/pesees', c.listPesees);
-router.post('/:id/pesees', c.addPesee);
+router.post('/:id/pesees', restrictTo(...SAISIE_TERRAIN), c.addPesee);
 
-// Phase & sortie
-router.patch('/:id/phase', c.changePhase);
-router.post('/:id/sortie', c.sortie);
+// Phase, santé & sortie
+router.patch('/:id/phase', restrictTo(...GESTION_FERME), c.changePhase);
+router.patch('/:id/sante', restrictTo(...SAISIE_TERRAIN), c.changeEtatSante);
+router.post('/:id/sortie', restrictTo(...SAISIE_SORTIE), c.sortie);
 
 module.exports = router;

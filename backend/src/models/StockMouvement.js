@@ -12,6 +12,7 @@ const stockMouvementSchema = new mongoose.Schema(
     motif: { type: String, default: '' },
     notes: { type: String, default: '' },
     utilisateur: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+    commandeSource: { type: mongoose.Schema.Types.ObjectId, ref: 'CommandeAchat', default: null },
   },
   { timestamps: true }
 );

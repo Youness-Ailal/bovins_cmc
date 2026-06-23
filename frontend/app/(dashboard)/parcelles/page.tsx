@@ -6,6 +6,8 @@ import ProgressBar from "@/components/ui/ProgressBar";
 import EmptyState from "@/components/ui/EmptyState";
 import TableSkeleton from "@/components/ui/TableSkeleton";
 import { useApi } from "@/lib/useApi";
+import { useAuth } from "@/lib/auth";
+import { can } from "@/lib/permissions";
 import type { Parcelle } from "@/lib/types";
 
 function OccupationBar({ pct }: { pct: number }) {
@@ -20,6 +22,8 @@ function OccupationBar({ pct }: { pct: number }) {
 }
 
 export default function ListeParcellesPage() {
+  const { user } = useAuth();
+  const canManage = can(user?.role, "manageParcelles");
   const { data: parcelles, loading, error } = useApi<Parcelle[]>("/parcelles");
 
   return (
@@ -27,10 +31,12 @@ export default function ListeParcellesPage() {
       <div className="flex flex-1 flex-col gap-6 overflow-auto p-8">
         <div className="flex items-center justify-between">
           <span className="font-dm-sans text-2xl font-bold text-label">Liste des parcelles</span>
-          <Link href="/parcelles/nouvelle" className="flex items-center gap-2 rounded-[8px] bg-primary px-4 py-2.5 font-inter text-sm font-semibold text-white hover:bg-primary-hover transition-colors">
-            <Icon name="plus" size={16} />
-            Nouvelle parcelle
-          </Link>
+          {canManage && (
+            <Link href="/parcelles/nouvelle" className="flex items-center gap-2 rounded-[8px] bg-primary px-4 py-2.5 font-inter text-sm font-semibold text-white hover:bg-primary-hover transition-colors">
+              <Icon name="plus" size={16} />
+              Nouvelle parcelle
+            </Link>
+          )}
         </div>
 
         {loading && <TableSkeleton cols={[2, 2, 3, 2, 1]} />}

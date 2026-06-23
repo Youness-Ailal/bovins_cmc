@@ -31,9 +31,9 @@ async function protect(req, res, next) {
  */
 function restrictTo(...roles) {
   return (req, res, next) => {
-    if (!req.user || !roles.includes(req.user.role)) {
-      return next(ApiError.forbidden("Vous n'avez pas la permission requise"));
-    }
+    if (!req.user) return next(ApiError.forbidden("Vous n'avez pas la permission requise"));
+    if (req.user.role === 'Admin') return next(); // Admin bypasses all role checks
+    if (!roles.includes(req.user.role)) return next(ApiError.forbidden("Vous n'avez pas la permission requise"));
     next();
   };
 }

@@ -5,89 +5,92 @@ import Link from "next/link";
 import Icon from "@/components/ui/Icon";
 import { useSaveToast } from "@/lib/useSaveToast";
 import { useToast } from "@/components/ui/Toast";
+import { useApi } from "@/lib/useApi";
 import { api } from "@/lib/api";
-import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
-} from "@/components/ui/select";
+import type { StockArticle, Parcelle } from "@/lib/types";
 
-// UC-09 — Créer et associer une ration
-// Calcul automatique du coût par tête/jour selon les prix en stock.
-// TODO: POST /api/rations
+const PHASE_OPTS = [
+  { value: "Veau",          bg: "bg-info/10",    text: "text-info",    sel: "bg-info text-white" },
+  { value: "Croissance",    bg: "bg-primary/10", text: "text-primary", sel: "bg-primary text-white" },
+  { value: "Engraissement", bg: "bg-warning/10", text: "text-warning", sel: "bg-warning text-white" },
+  { value: "Finition",      bg: "bg-success/10", text: "text-success", sel: "bg-success text-white" },
+];
 
-interface Ingredient {
+interface IngRow {
   id: string;
+  articleId: string;
   nom: string;
   quantite: string;
   unite: string;
   prixUnit: number;
 }
 
-const STOCK_DISPONIBLE = [
-  { id: "s1", nom: "Orge", unite: "kg", prixUnit: 2.5 },
-  { id: "s2", nom: "Maïs concassé", unite: "kg", prixUnit: 1.8 },
-  { id: "s3", nom: "Foin de luzerne", unite: "kg", prixUnit: 1.8 },
-  { id: "s4", nom: "Tourteau de soja", unite: "kg", prixUnit: 6.0 },
-  { id: "s5", nom: "Minéraux bovins", unite: "kg", prixUnit: 12.0 },
-  { id: "s6", nom: "Mélasse", unite: "L", prixUnit: 3.5 },
-];
-
-const PHASE_MAP: Record<string, string> = {
-  veau: "Veau", croissance: "Croissance", engraissement: "Engraissement", finition: "Finition",
-};
-
 export default function NouvelleRationPage() {
-  const [nom, setNom] = useState("");
-  const [phase, setPhase] = useState("");
-  const [ingredients, setIngredients] = useState<Ingredient[]>([]);
-  const [cible, setCible] = useState("");
-  const [submitting, setSubmitting] = useState(false);
+  const { data: articles } = useApi<StockArticle[]>("/stocks");
+  const { data: parcelles } = useApi<Parcelle[]>("/parcelles");
   const { error: toastError } = useToast();
+  const notifySaved = useSaveToast();
   const nextId = useRef(1);
 
-  function ajouterIngredient() {
-    const s = STOCK_DISPONIBLE[0];
+  const [nom, setNom] = useState("");
+  const [phase, setPhase] = useState("Croissance");
+  const [cible, setCible] = useState("");
+  const [notes, setNotes] = useState("");
+  const [ingredients, setIngredients] = useState<IngRow[]>([]);
+  const [submitting, setSubmitting] = useState(false);
+
+  const stockList = (articles ?? []).filter((a) => a.categorie !== "Médicaments");
+
+  function addRow() {
+    const first = stockList[0];
     setIngredients((prev) => [
       ...prev,
-      { id: String(nextId.current++), nom: s.nom, quantite: "1.0", unite: s.unite, prixUnit: s.prixUnit },
+      {
+        id: String(nextId.current++),
+        articleId: first?.id ?? "",
+        nom: first?.designation ?? "",
+        quantite: "1.0",
+        unite: first?.unite ?? "kg",
+        prixUnit: first?.prixUnitaire ?? 0,
+      },
     ]);
   }
 
-  function updateIngredient(id: string, field: keyof Ingredient, value: string | number) {
+  function selectArticle(rowId: string, articleId: string) {
+    const art = stockList.find((a) => a.id === articleId);
     setIngredients((prev) =>
-      prev.map((ing) => {
-        if (ing.id !== id) return ing;
-        if (field === "nom") {
-          const s = STOCK_DISPONIBLE.find((x) => x.nom === value);
-          return { ...ing, nom: String(value), unite: s?.unite ?? ing.unite, prixUnit: s?.prixUnit ?? ing.prixUnit };
-        }
-        return { ...ing, [field]: value };
-      })
+      prev.map((ing) =>
+        ing.id !== rowId
+          ? ing
+          : { ...ing, articleId, nom: art?.designation ?? "", unite: art?.unite ?? "kg", prixUnit: art?.prixUnitaire ?? 0 }
+      )
     );
   }
 
-  function supprimerIngredient(id: string) {
-    setIngredients((prev) => prev.filter((ing) => ing.id !== id));
+  function updateQty(rowId: string, value: string) {
+    setIngredients((prev) => prev.map((ing) => ing.id !== rowId ? ing : { ...ing, quantite: value }));
   }
 
-  const coutJour = ingredients.reduce(
-    (sum, ing) => sum + parseFloat(ing.quantite || "0") * ing.prixUnit,
-    0
-  );
+  function removeRow(rowId: string) {
+    setIngredients((prev) => prev.filter((ing) => ing.id !== rowId));
+  }
 
-  const notifySaved = useSaveToast();
+  const coutJour = ingredients.reduce((s, i) => s + parseFloat(i.quantite || "0") * i.prixUnit, 0);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!nom) return toastError("Le nom de la ration est requis");
+    if (!nom.trim()) return toastError("Le nom de la ration est requis");
     if (ingredients.length === 0) return toastError("Ajoutez au moins un ingrédient");
     setSubmitting(true);
     try {
       await api.post("/rations", {
         nom,
-        phase: PHASE_MAP[phase] ?? "",
+        phase,
         cible,
+        notes,
         ingredients: ingredients.map((i) => ({
           nom: i.nom,
+          article: i.articleId || null,
           quantite: Number(i.quantite) || 0,
           unite: i.unite,
           prixUnitaire: i.prixUnit,
@@ -102,164 +105,188 @@ export default function NouvelleRationPage() {
 
   return (
     <div className="flex flex-1 flex-col overflow-hidden bg-surface">
-      <header className="flex h-16 shrink-0 items-center justify-between border-b border-border-light bg-card px-7">
+      <header className="flex h-14 shrink-0 items-center justify-between border-b border-border-light bg-card px-7">
         <div className="flex items-center gap-1.5">
-          <Link href="/rations" className="font-inter text-sm text-placeholder hover:text-subtle transition-colors">Rations</Link>
-          <span className="font-inter text-sm text-placeholder">/</span>
-          <span className="font-dm-sans text-xl font-semibold text-label">Nouvelle ration</span>
+          <Link href="/rations" className="font-inter text-sm text-subtle hover:text-label transition-colors">Rations</Link>
+          <Icon name="chevron-right" size={14} className="text-placeholder" />
+          <span className="font-dm-sans text-[15px] font-semibold text-label">Nouvelle ration</span>
         </div>
         <div className="flex items-center gap-2">
           <Link href="/rations" className="flex items-center gap-1.5 rounded-[6px] border border-border-light bg-surface px-3.5 py-2 font-dm-sans text-[13px] font-semibold text-subtle hover:bg-border-light transition-colors">
             Annuler
           </Link>
-          <button type="submit" form="ration-form" className="flex items-center gap-1.5 rounded-[6px] bg-primary px-3.5 py-2 font-dm-sans text-[13px] font-semibold text-white hover:bg-primary-hover transition-colors">
+          <button
+            type="submit" form="ration-form" disabled={submitting || ingredients.length === 0}
+            className="flex items-center gap-1.5 rounded-[6px] bg-primary px-3.5 py-2 font-dm-sans text-[13px] font-semibold text-white hover:bg-primary/90 disabled:opacity-50 transition-colors"
+          >
             <Icon name="save" size={14} />
-            Créer la ration
+            {submitting ? "Création…" : "Créer la ration"}
           </button>
         </div>
       </header>
 
-      <div className="flex flex-1 flex-col gap-4 overflow-auto p-6">
-        <form id="ration-form" onSubmit={handleSubmit} noValidate className="flex flex-col gap-4">
-          {/* Infos générales */}
-          <div className="rounded-[12px] border border-border-light bg-card p-6">
-            <span className="font-dm-sans text-sm font-bold text-label">Informations générales</span>
-            <div className="mt-4 flex gap-4">
-              <div className="flex flex-1 flex-col gap-1.5">
-                <label className="font-inter text-xs font-medium text-label">Nom de la ration *</label>
-                <input type="text" value={nom} onChange={(e) => setNom(e.target.value)} placeholder="Ex: Ration Finition Charolaise" className="h-10 w-full rounded-[6px] border border-border bg-card px-3 font-inter text-[13px] text-label placeholder:text-placeholder focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary" />
+      <form id="ration-form" onSubmit={handleSubmit} noValidate className="flex flex-1 flex-col gap-4 overflow-auto p-6">
+        {/* General info */}
+        <div className="rounded-[12px] border border-border-light bg-card p-5">
+          <h2 className="font-dm-sans text-[14px] font-semibold text-label">Informations générales</h2>
+          <div className="mt-4 flex flex-col gap-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="flex flex-col gap-1.5">
+                <label className="font-inter text-[12px] font-medium text-subtle">Nom de la ration *</label>
+                <input
+                  type="text" value={nom} onChange={(e) => setNom(e.target.value)}
+                  placeholder="Ex: Ration Finition Charolaise"
+                  className="h-10 rounded-[6px] border border-border-light bg-surface px-3 font-inter text-[13px] text-label placeholder:text-placeholder focus:border-primary focus:outline-none"
+                />
               </div>
-              <div className="flex w-[220px] flex-col gap-1.5">
-                <label className="font-inter text-xs font-medium text-label">Phase cible *</label>
-                <Select value={phase} onValueChange={(v) => setPhase(v ?? "")} name="phase">
-                  <SelectTrigger className="h-10 w-full rounded-[6px] border border-border bg-card">
-                    <SelectValue placeholder="Sélectionner" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="veau">Veau</SelectItem>
-                    <SelectItem value="croissance">Croissance (Jeune)</SelectItem>
-                    <SelectItem value="engraissement">Engraissement (Adulte)</SelectItem>
-                    <SelectItem value="finition">Finition</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="flex w-[220px] flex-col gap-1.5">
-                <label className="font-inter text-xs font-medium text-label">Associer à</label>
-                <Select value={cible} onValueChange={(v) => setCible(v ?? "")} name="cible">
-                  <SelectTrigger className="h-10 w-full rounded-[6px] border border-border bg-card">
-                    <SelectValue placeholder="Parcelle…" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="parcelle-alpha">Parcelle Alpha</SelectItem>
-                    <SelectItem value="parcelle-beta">Parcelle Beta</SelectItem>
-                    <SelectItem value="parcelle-gamma">Parcelle Gamma</SelectItem>
-                  </SelectContent>
-                </Select>
+              <div className="flex flex-col gap-1.5">
+                <label className="font-inter text-[12px] font-medium text-subtle">Parcelle associée</label>
+                <select
+                  value={cible} onChange={(e) => setCible(e.target.value)}
+                  className="h-10 rounded-[6px] border border-border-light bg-surface px-3 font-inter text-[13px] text-label focus:border-primary focus:outline-none"
+                >
+                  <option value="">— Aucune —</option>
+                  {(parcelles ?? []).map((p) => <option key={p.id} value={p.nom}>{p.nom}</option>)}
+                </select>
               </div>
             </div>
+
+            {/* Phase chips */}
+            <div className="flex flex-col gap-1.5">
+              <label className="font-inter text-[12px] font-medium text-subtle">Phase cible *</label>
+              <div className="flex gap-2">
+                {PHASE_OPTS.map((opt) => (
+                  <button
+                    key={opt.value} type="button" onClick={() => setPhase(opt.value)}
+                    className={`flex-1 rounded-[8px] px-4 py-2.5 font-dm-sans text-[13px] font-semibold transition-all ${
+                      phase === opt.value ? opt.sel : `${opt.bg} ${opt.text} hover:opacity-80`
+                    }`}
+                  >
+                    {opt.value}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <label className="font-inter text-[12px] font-medium text-subtle">Notes</label>
+              <input
+                type="text" value={notes} onChange={(e) => setNotes(e.target.value)}
+                placeholder="Observations, objectifs nutritionnels…"
+                className="h-10 rounded-[6px] border border-border-light bg-surface px-3 font-inter text-[13px] text-label placeholder:text-placeholder focus:border-primary focus:outline-none"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Ingredients */}
+        <div className="rounded-[12px] border border-border-light bg-card p-5">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="font-dm-sans text-[14px] font-semibold text-label">Composition du lot</h2>
+              <p className="mt-0.5 font-inter text-[12px] text-subtle">Quantités totales pour le lot (pas par tête)</p>
+            </div>
+            <button
+              type="button" onClick={addRow}
+              className="flex items-center gap-1.5 rounded-[6px] border border-border-light bg-surface px-3 py-1.5 font-inter text-[12px] font-medium text-subtle hover:bg-border-light transition-colors"
+            >
+              <Icon name="plus" size={13} />
+              Ajouter un ingrédient
+            </button>
           </div>
 
-          {/* Ingrédients */}
-          <div className="rounded-[12px] border border-border-light bg-card p-6">
-            <span className="font-dm-sans text-sm font-bold text-label">Composition (quantités par tête / jour)</span>
-
-            <div className="mt-4 overflow-hidden rounded-[8px] border border-border-light">
-              {/* Header */}
-              <div className="flex items-center gap-3 bg-surface px-4" style={{ height: 40 }}>
-                <span className="flex-1 font-inter text-[11px] font-bold uppercase tracking-wide text-placeholder">Ingrédient</span>
-                <span className="w-[110px] shrink-0 font-inter text-[11px] font-bold uppercase tracking-wide text-placeholder">Quantité/j</span>
-                <span className="w-[70px] shrink-0 font-inter text-[11px] font-bold uppercase tracking-wide text-placeholder">Unité</span>
-                <span className="w-[110px] shrink-0 font-inter text-[11px] font-bold uppercase tracking-wide text-placeholder">Prix unit.</span>
-                <span className="w-[110px] shrink-0 font-inter text-[11px] font-bold uppercase tracking-wide text-placeholder">Coût/j/tête</span>
-                <span className="w-8 shrink-0" />
+          {ingredients.length === 0 ? (
+            <div
+              onClick={addRow}
+              className="mt-4 flex cursor-pointer flex-col items-center gap-2 rounded-[8px] border-2 border-dashed border-border-light py-10 hover:border-primary/40 hover:bg-primary/5 transition-colors"
+            >
+              <Icon name="wheat" size={26} className="text-placeholder" />
+              <p className="font-inter text-[13px] text-placeholder">Cliquez pour ajouter des ingrédients</p>
+            </div>
+          ) : (
+            <div className="mt-4">
+              {/* Column headers */}
+              <div className="grid grid-cols-[1fr_100px_70px_100px_90px_28px] gap-2 border-b border-border-light pb-2">
+                {["Ingrédient", "Quantité totale", "Unité", "Prix unit.", "Coût", ""].map((h) => (
+                  <span key={h} className="font-inter text-[10px] font-semibold uppercase tracking-wide text-placeholder">{h}</span>
+                ))}
               </div>
 
-              {/* Rows */}
-              {ingredients.length === 0 ? (
-                <div className="flex items-center justify-center py-6 font-inter text-[13px] text-placeholder">
-                  Aucun ingrédient — cliquez sur &quot;Ajouter&quot; pour commencer
-                </div>
-              ) : (
-                ingredients.map((ing) => {
-                  const cout = (parseFloat(ing.quantite || "0") * ing.prixUnit).toFixed(2);
-                  return (
-                    <div key={ing.id} className="flex items-center gap-3 border-t border-border-light px-4" style={{ height: 48 }}>
-                      <div className="flex-1">
-                        <Select value={ing.nom} onValueChange={(v) => updateIngredient(ing.id, "nom", v ?? "")}>
-                          <SelectTrigger className="h-8 w-full rounded-[4px] border border-border bg-surface font-inter text-[13px]">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {STOCK_DISPONIBLE.map((s) => (
-                              <SelectItem key={s.id} value={s.nom}>{s.nom}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
+              {ingredients.map((ing) => {
+                const cout = parseFloat(ing.quantite || "0") * ing.prixUnit;
+                return (
+                  <div key={ing.id} className="grid grid-cols-[1fr_100px_70px_100px_90px_28px] items-center gap-2 border-b border-border-light py-2.5 last:border-b-0">
+                    <select
+                      value={ing.articleId}
+                      onChange={(e) => selectArticle(ing.id, e.target.value)}
+                      className="h-9 rounded-[6px] border border-border-light bg-surface px-2 font-inter text-[12px] text-label focus:border-primary focus:outline-none"
+                    >
+                      {stockList.length === 0 && <option value="">Chargement…</option>}
+                      {stockList.map((a) => <option key={a.id} value={a.id}>{a.designation}</option>)}
+                    </select>
+                    <div className="flex h-9 items-center gap-1 rounded-[6px] border border-border-light bg-surface px-2">
                       <input
-                        type="number"
-                        min="0"
-                        step="0.1"
-                        value={ing.quantite}
-                        onChange={(e) => updateIngredient(ing.id, "quantite", e.target.value)}
-                        className="w-[110px] shrink-0 rounded-[4px] border border-border bg-surface px-2 py-1 font-inter text-[13px] text-label focus:border-primary focus:outline-none"
+                        type="number" min="0" step="0.1" value={ing.quantite}
+                        onChange={(e) => updateQty(ing.id, e.target.value)}
+                        className="w-full bg-transparent font-inter text-[12px] text-label focus:outline-none"
                       />
-                      <span className="w-[70px] shrink-0 font-inter text-[13px] text-subtle">{ing.unite}</span>
-                      <span className="w-[110px] shrink-0 font-inter text-[13px] text-subtle">{ing.prixUnit.toFixed(2)} MAD</span>
-                      <span className="w-[110px] shrink-0 font-inter text-[13px] font-semibold text-label">{cout} MAD</span>
-                      <button
-                        type="button"
-                        onClick={() => supprimerIngredient(ing.id)}
-                        className="flex h-6 w-6 shrink-0 items-center justify-center rounded text-placeholder hover:text-danger transition-colors"
-                      >
-                        <Icon name="x" size={14} />
-                      </button>
                     </div>
-                  );
-                })
-              )}
+                    <span className="font-inter text-[12px] text-subtle">{ing.unite}</span>
+                    <span className="font-inter text-[12px] text-subtle">{ing.prixUnit.toFixed(2)} MAD</span>
+                    <span className={`font-dm-sans text-[13px] font-semibold ${cout > 0 ? "text-label" : "text-placeholder"}`}>
+                      {cout.toFixed(2)} MAD
+                    </span>
+                    <button type="button" onClick={() => removeRow(ing.id)} className="text-placeholder hover:text-danger transition-colors">
+                      <Icon name="x" size={14} />
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
 
-              {/* Add row */}
+        {/* Cost summary bar */}
+        {ingredients.length > 0 && (
+          <div className="rounded-[12px] border border-primary/20 bg-primary/5 px-6 py-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-8">
+                <div className="flex flex-col gap-0.5">
+                  <span className="font-inter text-[11px] text-subtle">Coût total du lot</span>
+                  <span className="font-dm-sans text-[28px] font-bold leading-none text-primary">{coutJour.toFixed(2)} <span className="text-[14px] font-normal text-subtle">MAD</span></span>
+                </div>
+                <div className="flex flex-col gap-0.5">
+                  <span className="font-inter text-[11px] text-subtle">Ingrédients</span>
+                  <span className="font-dm-sans text-[20px] font-bold leading-none text-label">{ingredients.length}</span>
+                </div>
+                <div className="flex flex-col gap-0.5">
+                  <span className="font-inter text-[11px] text-subtle">Phase</span>
+                  <span className="font-dm-sans text-[14px] font-bold text-label">{phase}</span>
+                </div>
+                {/* Ingredient cost breakdown */}
+                <div className="flex flex-col gap-1">
+                  <span className="font-inter text-[11px] text-subtle">Répartition</span>
+                  <div className="flex h-2 w-40 overflow-hidden rounded-full bg-border-light">
+                    {ingredients.map((ing, idx) => {
+                      const cout = parseFloat(ing.quantite || "0") * ing.prixUnit;
+                      const pct = coutJour > 0 ? (cout / coutJour) * 100 : 0;
+                      const colors = ["bg-primary", "bg-warning", "bg-info", "bg-success", "bg-danger"];
+                      return <div key={ing.id} className={colors[idx % colors.length]} style={{ width: `${pct}%` }} />;
+                    })}
+                  </div>
+                </div>
+              </div>
               <button
-                type="button"
-                onClick={ajouterIngredient}
-                className="flex w-full items-center gap-2 border-t border-border-light px-4 py-2.5 font-inter text-[13px] text-primary hover:bg-surface transition-colors"
+                type="submit" disabled={submitting}
+                className="flex items-center gap-1.5 rounded-[6px] bg-primary px-5 py-2.5 font-dm-sans text-[13px] font-semibold text-white hover:bg-primary/90 disabled:opacity-50 transition-colors"
               >
-                <Icon name="plus" size={14} />
-                Ajouter un ingrédient
+                <Icon name="save" size={14} />
+                {submitting ? "Création…" : "Créer la ration"}
               </button>
             </div>
           </div>
-
-          {/* Coût total */}
-          <div className="flex items-center justify-between rounded-[10px] border border-border-light bg-card px-6 py-4">
-            <div className="flex gap-8">
-              <div className="flex flex-col gap-0.5">
-                <span className="font-inter text-[11px] text-placeholder">Coût total / tête / jour</span>
-                <span className="font-dm-sans text-2xl font-bold text-primary">{coutJour.toFixed(2)} MAD</span>
-              </div>
-              <div className="flex flex-col gap-0.5">
-                <span className="font-inter text-[11px] text-placeholder">Ingrédients</span>
-                <span className="font-dm-sans text-2xl font-bold text-label">{ingredients.length}</span>
-              </div>
-              {cible && (
-                <div className="flex flex-col gap-0.5">
-                  <span className="font-inter text-[11px] text-placeholder">Assignée à</span>
-                  <span className="font-inter text-[13px] font-semibold text-label">{cible}</span>
-                </div>
-              )}
-            </div>
-            <button
-              type="submit"
-              disabled={ingredients.length === 0}
-              className="flex items-center gap-1.5 rounded-[6px] bg-primary px-5 py-2.5 font-dm-sans text-[13px] font-semibold text-white hover:bg-primary-hover transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-            >
-              <Icon name="save" size={14} />
-              Créer la ration
-            </button>
-          </div>
-        </form>
-      </div>
+        )}
+      </form>
     </div>
   );
 }
