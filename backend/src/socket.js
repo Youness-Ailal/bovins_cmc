@@ -2,19 +2,22 @@ const { Server } = require('socket.io');
 const jwt = require('jsonwebtoken');
 const User = require('./models/User');
 const config = require('./config/env');
+const connectDB = require('./config/db');
 
 let io = null;
 
 function initSocket(httpServer, app) {
   io = new Server(httpServer, {
     cors: {
-      origin: config.clientOrigin || 'http://localhost:3000',
+      origin: config.clientOrigins,
       credentials: true,
     },
+    transports: ['websocket'],
   });
 
   io.use(async (socket, next) => {
     try {
+      await connectDB();
       const token = socket.handshake.auth.token;
       if (!token) return next(new Error('Token manquant'));
       const decoded = jwt.verify(token, config.jwt.secret);

@@ -5,8 +5,39 @@ const Traitement = require('../models/Traitement');
 const Alerte = require('../models/Alerte');
 const Distribution = require('../models/Distribution');
 
+function getDateRange(query) {
+  const { dateFrom, dateTo } = query;
+  if (!dateFrom && !dateTo) return null;
+
+  const from = dateFrom ? new Date(`${dateFrom}T00:00:00.000Z`) : null;
+  const to = dateTo ? new Date(`${dateTo}T00:00:00.000Z`) : null;
+
+  if ((from && Number.isNaN(from.getTime())) || (to && Number.isNaN(to.getTime()))) {
+    return { error: 'Période invalide. Utilisez le format AAAA-MM-JJ.' };
+  }
+  if (from && to && from > to) {
+    return { error: 'La date de début doit précéder la date de fin.' };
+  }
+
+  return {
+    from,
+    toExclusive: to ? new Date(to.getTime() + 24 * 60 * 60 * 1000) : null,
+  };
+}
+
+function dateFilter(field, range) {
+  if (!range) return {};
+  const condition = {};
+  if (range.from) condition.$gte = range.from;
+  if (range.toExclusive) condition.$lt = range.toExclusive;
+  return Object.keys(condition).length ? { [field]: condition } : {};
+}
+
 // GET /api/dashboard  (UC-18)
 exports.summary = asyncHandler(async (req, res) => {
+  const range = getDateRange(req.query);
+  if (range?.error) return res.status(400).json({ success: false, message: range.error });
+
   const actifs = await Animal.find({ statut: 'Actif' }).populate('race', 'poidsAbattage');
 
   const troupeauTotal = actifs.length;
@@ -37,14 +68,25 @@ exports.summary = asyncHandler(async (req, res) => {
   }));
 
   // Upcoming treatments
-  const traitements = await Traitement.find({ statut: { $in: ['En cours', 'Planifié'] } })
+  const traitementFilter = { statut: { $in: ['En cours', 'Planifié'] } };
+  if (range?.from || range?.toExclusive) {
+    traitementFilter.$and = [];
+    if (range.toExclusive) traitementFilter.$and.push({ dateDebut: { $lt: range.toExclusive } });
+    if (range.from) {
+      traitementFilter.$and.push({
+        $or: [{ dateFin: null }, { dateFin: { $gte: range.from } }],
+      });
+    }
+  }
+  const traitements = await Traitement.find(traitementFilter)
     .populate('animal', 'identifiant')
     .sort('-dateDebut')
     .limit(5);
 
   // Active alerts
-  const alertes = await Alerte.find({ traitee: false }).sort('-date').limit(5);
-  const alertesActives = await Alerte.countDocuments({ traitee: false });
+  const alerteFilter = { traitee: false, ...dateFilter('date', range) };
+  const alertes = await Alerte.find(alerteFilter).sort('-date').limit(5);
+  const alertesActives = await Alerte.countDocuments(alerteFilter);
 
   // Ready to sell count
   const now = new Date();
@@ -69,12 +111,15 @@ exports.summary = asyncHandler(async (req, res) => {
 
 // GET /api/dashboard/rentabilite — herd profitability summary (UC-17 aggregate)
 exports.rentabilite = asyncHandler(async (req, res) => {
-  const distributions = await Distribution.find();
+  const range = getDateRange(req.query);
+  if (range?.error) return res.status(400).json({ success: false, message: range.error });
+
+  const distributions = await Distribution.find(dateFilter('date', range));
   const alimentation = Math.round(distributions.reduce((s, d) => s + d.coutEstime, 0));
 
-  const actifs = await Animal.find({ statut: 'Actif' });
-  const achat = Math.round(actifs.reduce((s, a) => s + (a.poidsEntree || 0) * 30, 0));
-  const veterinaire = Math.round(actifs.length * 56); // placeholder per-head vet cost
+  const animaux = await Animal.find(dateFilter('dateEntree', range));
+  const achat = Math.round(animaux.reduce((s, a) => s + (a.poidsEntree || 0) * 30, 0));
+  const veterinaire = Math.round(animaux.length * 56); // placeholder per-head vet cost
 
   res.json({
     success: true,

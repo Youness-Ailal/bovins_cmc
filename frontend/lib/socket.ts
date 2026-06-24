@@ -3,13 +3,14 @@ import { API_URL } from "./config";
 
 let socket: Socket | null = null;
 
-const SOCKET_URL = API_URL.replace(/\/api$/, "");
+const SOCKET_URL = API_URL.replace(/\/api\/?$/, "");
 
 export function getSocket(token: string): Socket {
   if (!socket) {
     socket = io(SOCKET_URL, {
       auth: { token },
       autoConnect: true,
+      transports: ["websocket"],
     });
   }
   return socket;

@@ -1,4 +1,4 @@
-user: imyounessaylal_db_user
-pass: nnjSiqH5aHI8oMWL
+MongoDB credentials must not be committed to Git.
 
-mongoURL: mongodb+srv://imyounessaylal_db_user:nnjSiqH5aHI8oMWL@cluster0.zqndisq.mongodb.net/?appName=Cluster0
+Configure the connection locally in `.env` and in Vercel as the `MONGO_URI`
+environment variable. Use `.env.example` as the template.

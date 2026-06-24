@@ -1,25 +1,33 @@
 const mongoose = require('mongoose');
 const config = require('./env');
 
-/**
- * Connect to MongoDB. Exits the process on failure so the server never
- * runs in a half-broken state.
- */
+let connectionPromise = null;
+
 async function connectDB() {
   const uri = config.mongoUri;
   if (!uri) {
-    console.error('MONGO_URI is not defined');
-    process.exit(1);
+    throw new Error('MONGO_URI is not defined');
   }
 
-  try {
-    mongoose.set('strictQuery', true);
-    const conn = await mongoose.connect(uri);
-    console.log(`MongoDB connected: ${conn.connection.host}/${conn.connection.name}`);
-  } catch (err) {
-    console.error('MongoDB connection error:', err.message);
-    process.exit(1);
+  if (mongoose.connection.readyState === 1) {
+    return mongoose.connection;
   }
+
+  if (!connectionPromise) {
+    mongoose.set('strictQuery', true);
+    connectionPromise = mongoose
+      .connect(uri, { serverSelectionTimeoutMS: 10000 })
+      .then((conn) => {
+        console.log(`MongoDB connected: ${conn.connection.host}/${conn.connection.name}`);
+        return conn.connection;
+      })
+      .catch((error) => {
+        connectionPromise = null;
+        throw error;
+      });
+  }
+
+  return connectionPromise;
 }
 
 module.exports = connectDB;

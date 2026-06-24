@@ -1,7 +1,10 @@
 "use client";
 
+import { useMemo, useState } from "react";
 import Link from "next/link";
+import { format, startOfYear, subDays } from "date-fns";
 import Icon from "@/components/ui/Icon";
+import DatePicker from "@/components/ui/DatePicker";
 import { useApi } from "@/lib/useApi";
 import { useAuth } from "@/lib/auth";
 import type { DashboardSummary, Animal, Traitement } from "@/lib/types";
@@ -9,6 +12,15 @@ import TroupeauBarChart from "@/components/dashboard/TroupeauBarChart";
 import CoutsDonutChart from "@/components/dashboard/CoutsDonutChart";
 
 interface Rentabilite { alimentation: number; veterinaire: number; achat: number; total: number; }
+type Period = "7" | "30" | "90" | "year" | "custom";
+
+const PERIOD_LABELS: Record<Period, string> = {
+  "7": "7 derniers jours",
+  "30": "30 derniers jours",
+  "90": "90 derniers jours",
+  year: "Cette année",
+  custom: "Période personnalisée",
+};
 
 function ViewLink({ href, label }: { href: string; label: string }) {
   return (
@@ -33,8 +45,23 @@ const STOCK_COLOR: Record<string, { fill: string; text: string }> = {
 
 export default function DashboardPage() {
   const { user } = useAuth();
-  const { data, loading, error } = useApi<DashboardSummary>("/dashboard");
-  const { data: renta } = useApi<Rentabilite>("/dashboard/rentabilite");
+  const [period, setPeriod] = useState<Period>("30");
+  const [customFrom, setCustomFrom] = useState(() => subDays(new Date(), 29));
+  const [customTo, setCustomTo] = useState(() => new Date());
+
+  const range = useMemo(() => {
+    const currentDate = new Date();
+    if (period === "custom") return { from: customFrom, to: customTo };
+    if (period === "year") return { from: startOfYear(currentDate), to: currentDate };
+    return { from: subDays(currentDate, Number(period) - 1), to: currentDate };
+  }, [period, customFrom, customTo]);
+
+  const dateError = range.from > range.to;
+  const query = dateError
+    ? null
+    : `dateFrom=${format(range.from, "yyyy-MM-dd")}&dateTo=${format(range.to, "yyyy-MM-dd")}`;
+  const { data, loading, error } = useApi<DashboardSummary>(query ? `/dashboard?${query}` : null);
+  const { data: renta } = useApi<Rentabilite>(query ? `/dashboard/rentabilite?${query}` : null);
   const { data: prets } = useApi<Animal[]>("/animaux/prets-a-vendre");
 
   const today = new Date().toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" });
@@ -47,12 +74,25 @@ export default function DashboardPage() {
     <div className="flex flex-1 flex-col overflow-hidden bg-surface">
       <div className="flex flex-1 flex-col gap-[22px] overflow-auto px-9 py-7">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="flex flex-col gap-0.5">
             <span className="font-dm-sans text-2xl font-bold text-label">Tableau de bord</span>
             <span className="font-inter text-[13px] text-subtle">Vue d&apos;ensemble de votre élevage · {today}</span>
           </div>
           <div className="flex items-center gap-2.5">
+            <div className="flex h-[38px] items-center gap-2 rounded-[6px] border border-border bg-card px-3">
+              <Icon name="calendar" size={15} className="text-primary" />
+              <select
+                value={period}
+                onChange={(event) => setPeriod(event.target.value as Period)}
+                aria-label="Filtrer le tableau de bord par période"
+                className="cursor-pointer bg-transparent font-inter text-[12px] font-medium text-label outline-none"
+              >
+                {Object.entries(PERIOD_LABELS).map(([value, label]) => (
+                  <option key={value} value={value}>{label}</option>
+                ))}
+              </select>
+            </div>
             <Link href="/performance" className="flex h-[38px] w-[38px] items-center justify-center rounded-[6px] border border-border bg-card hover:bg-surface transition-colors">
               <Icon name="bell" size={18} className="text-subtle" />
             </Link>
@@ -61,6 +101,24 @@ export default function DashboardPage() {
             </div>
           </div>
         </div>
+
+        {period === "custom" && (
+          <div className="flex flex-wrap items-end gap-3 rounded-[10px] border border-border-light bg-card p-3">
+            <label className="flex w-[180px] flex-col gap-1">
+              <span className="font-inter text-[11px] font-medium text-subtle">Date de début</span>
+              <DatePicker value={customFrom} onChange={(date) => date && setCustomFrom(date)} />
+            </label>
+            <label className="flex w-[180px] flex-col gap-1">
+              <span className="font-inter text-[11px] font-medium text-subtle">Date de fin</span>
+              <DatePicker value={customTo} onChange={(date) => date && setCustomTo(date)} />
+            </label>
+            <span className={`pb-2 font-inter text-[12px] ${dateError ? "text-danger" : "text-subtle"}`}>
+              {dateError
+                ? "La date de début doit précéder la date de fin."
+                : `Données du ${format(range.from, "dd/MM/yyyy")} au ${format(range.to, "dd/MM/yyyy")}`}
+            </span>
+          </div>
+        )}
 
         {loading && <p className="font-inter text-sm text-placeholder">Chargement…</p>}
         {error && <p className="font-inter text-sm text-danger">{error}</p>}
