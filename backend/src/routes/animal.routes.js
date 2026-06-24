@@ -25,4 +25,7 @@ router.post('/:id/sortie', restrictTo(...SAISIE_SORTIE), c.sortie);
 router.get('/:id/passeport', c.passeport);
 router.get('/:id/laissez-passer', c.laissezPasser);
 
+// QR Code card PDF (Plan 08)
+router.get('/:id/qrcode-card', c.getQrCodeCard);
+
 module.exports = router;

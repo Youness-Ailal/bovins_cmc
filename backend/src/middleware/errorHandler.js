@@ -2,6 +2,8 @@
 const mongoose = require('mongoose');
 
 function notFound(req, res, next) {
+  // Socket.io handles its own routes — Express must not send a response for them
+  if (req.originalUrl.startsWith('/socket.io')) return next();
   res.status(404).json({ success: false, error: `Route introuvable: ${req.originalUrl}` });
 }
 

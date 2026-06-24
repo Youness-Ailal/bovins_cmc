@@ -258,8 +258,16 @@ function createKpiRow(doc, items) {
 
 // ─── Document streamers ───────────────────────────────────────────────────────
 
-function streamPasseport(res, data) {
+function streamPasseport(res, data, qrBuffer) {
   const doc = newDoc(res);
+
+  // Place QR code in the top-right corner before the header draws text
+  if (qrBuffer) {
+    const qrSize = 72;
+    const x = doc.page.width - doc.page.margins.right - qrSize;
+    doc.image(qrBuffer, x, doc.page.margins.top, { width: qrSize });
+  }
+
   createHeader(doc, 'Passeport Bovin Officiel', `Identifiant : ${data.identifiantFerme}`);
 
   createSection(doc, 'Identification de l’animal');

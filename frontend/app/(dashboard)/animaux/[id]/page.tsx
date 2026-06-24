@@ -75,8 +75,6 @@ export default function FicheAnimalPage({ params }: { params: Promise<{ id: stri
   const [activeTab, setActiveTab] = useState("identite");
   const [confirmPhase, setConfirmPhase] = useState(false);
   const [updatingSante, setUpdatingSante] = useState(false);
-  const [lpOpen, setLpOpen] = useState(false);
-  const [lp, setLp] = useState({ destination: "", province: "", transporteur: "", immatriculation: "" });
   const [downloading, setDownloading] = useState(false);
 
   const phaseIndex = animal ? PHASES.indexOf(animal.phase) : -1;
@@ -92,23 +90,6 @@ export default function FicheAnimalPage({ params }: { params: Promise<{ id: stri
     } finally {
       setDownloading(false);
     }
-  }
-
-  async function submitLaissezPasser() {
-    if (!animal) return;
-    if (!lp.destination.trim()) {
-      toastError("La destination est requise");
-      return;
-    }
-    const qs = new URLSearchParams({
-      destination: lp.destination,
-      province: lp.province,
-      transporteur: lp.transporteur,
-      immatriculation: lp.immatriculation,
-    }).toString();
-    await downloadDoc(`/animaux/${id}/laissez-passer?${qs}`, `laissez-passer-${animal.identifiant}.pdf`, "Laissez-passer");
-    setLpOpen(false);
-    setLp({ destination: "", province: "", transporteur: "", immatriculation: "" });
   }
 
   async function updateSante(etatSante: string) {
@@ -169,14 +150,6 @@ export default function FicheAnimalPage({ params }: { params: Promise<{ id: stri
           >
             <Icon name="file-text" size={13} />
             Passeport PDF
-          </button>
-          <button
-            onClick={() => setLpOpen(true)}
-            disabled={downloading}
-            className="flex items-center gap-1.5 rounded-[6px] border border-border-light bg-surface px-3 py-1.5 font-dm-sans text-[13px] font-semibold text-subtle hover:bg-border-light transition-colors disabled:opacity-50"
-          >
-            <Icon name="truck" size={13} />
-            Laissez-passer
           </button>
           {canSaisiePesee && (
             <Link href={`/animaux/${id}/pesee/nouveau`} className="flex items-center gap-1.5 rounded-[6px] border border-border-light bg-surface px-3 py-1.5 font-dm-sans text-[13px] font-semibold text-subtle hover:bg-border-light transition-colors">
@@ -677,84 +650,6 @@ export default function FicheAnimalPage({ params }: { params: Promise<{ id: stri
         onCancel={() => setConfirmPhase(false)}
       />
 
-      {/* Laissez-passer destination modal */}
-      {lpOpen && (
-        <div className="fixed inset-0 z-[90] flex items-center justify-center">
-          <div className="absolute inset-0 bg-label/40" onClick={() => setLpOpen(false)} />
-          <div className="relative z-10 w-full max-w-[460px] rounded-[12px] border border-border-light bg-card p-6 shadow-xl">
-            <div className="flex items-start gap-3">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary-light">
-                <Icon name="truck" size={20} className="text-primary" />
-              </div>
-              <div className="flex flex-col gap-1">
-                <span className="font-dm-sans text-base font-bold text-label">Laissez-passer de transport</span>
-                <span className="font-inter text-[13px] leading-relaxed text-subtle">
-                  Renseignez la destination de {animal.identifiant}. Validité 72h à compter de la génération.
-                </span>
-              </div>
-            </div>
-
-            <div className="mt-5 flex flex-col gap-3">
-              <div className="flex flex-col gap-1.5">
-                <label className="font-inter text-xs font-medium text-label">Destination *</label>
-                <input
-                  autoFocus
-                  value={lp.destination}
-                  onChange={(e) => setLp({ ...lp, destination: e.target.value })}
-                  placeholder="Lieu / marché de destination"
-                  className="h-10 rounded-[6px] border border-border bg-card px-3 font-inter text-[13px] text-label placeholder:text-placeholder focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-                />
-              </div>
-              <div className="flex gap-3">
-                <div className="flex flex-1 flex-col gap-1.5">
-                  <label className="font-inter text-xs font-medium text-label">Province</label>
-                  <input
-                    value={lp.province}
-                    onChange={(e) => setLp({ ...lp, province: e.target.value })}
-                    placeholder="Province"
-                    className="h-10 rounded-[6px] border border-border bg-card px-3 font-inter text-[13px] text-label placeholder:text-placeholder focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-                  />
-                </div>
-                <div className="flex flex-1 flex-col gap-1.5">
-                  <label className="font-inter text-xs font-medium text-label">Immatriculation</label>
-                  <input
-                    value={lp.immatriculation}
-                    onChange={(e) => setLp({ ...lp, immatriculation: e.target.value })}
-                    placeholder="Plaque du véhicule"
-                    className="h-10 rounded-[6px] border border-border bg-card px-3 font-inter text-[13px] text-label placeholder:text-placeholder focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-                  />
-                </div>
-              </div>
-              <div className="flex flex-col gap-1.5">
-                <label className="font-inter text-xs font-medium text-label">Transporteur</label>
-                <input
-                  value={lp.transporteur}
-                  onChange={(e) => setLp({ ...lp, transporteur: e.target.value })}
-                  placeholder="Nom du transporteur"
-                  className="h-10 rounded-[6px] border border-border bg-card px-3 font-inter text-[13px] text-label placeholder:text-placeholder focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
-                />
-              </div>
-            </div>
-
-            <div className="mt-6 flex justify-end gap-2.5">
-              <button
-                onClick={() => setLpOpen(false)}
-                className="rounded-[6px] border border-border bg-surface px-4 py-2 font-dm-sans text-[13px] font-semibold text-subtle hover:bg-border-light transition-colors"
-              >
-                Annuler
-              </button>
-              <button
-                onClick={submitLaissezPasser}
-                disabled={downloading}
-                className="flex items-center gap-1.5 rounded-[6px] bg-primary px-4 py-2 font-dm-sans text-[13px] font-semibold text-white hover:bg-primary-hover transition-colors disabled:opacity-50"
-              >
-                <Icon name="file-text" size={14} />
-                {downloading ? "Génération…" : "Générer le PDF"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

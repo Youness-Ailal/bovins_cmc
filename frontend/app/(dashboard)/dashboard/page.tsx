@@ -53,10 +53,6 @@ export default function DashboardPage() {
             <span className="font-inter text-[13px] text-subtle">Vue d&apos;ensemble de votre élevage · {today}</span>
           </div>
           <div className="flex items-center gap-2.5">
-            <div className="flex items-center gap-2 rounded-[6px] border border-border bg-card px-3.5 py-2" style={{ width: 220 }}>
-              <Icon name="search" size={16} className="text-placeholder" />
-              <span className="font-inter text-[13px] text-placeholder">Rechercher…</span>
-            </div>
             <Link href="/performance" className="flex h-[38px] w-[38px] items-center justify-center rounded-[6px] border border-border bg-card hover:bg-surface transition-colors">
               <Icon name="bell" size={18} className="text-subtle" />
             </Link>

@@ -8,6 +8,10 @@ const Alerte = require('../models/Alerte');
 const Parametres = require('../models/Parametres');
 const { computeGMQ } = require('../utils/calculations');
 const { streamPasseport, streamLaissezPasser } = require('../utils/pdfGenerator');
+const { getIO } = require('../socket');
+const QRCode = require('qrcode');
+const PDFDocument = require('pdfkit');
+const config = require('../config/env');
 
 const PHASES = ['Veau', 'Croissance', 'Engraissement', 'Finition'];
 
@@ -173,6 +177,24 @@ exports.changeEtatSante = asyncHandler(async (req, res) => {
   if (!animal) throw ApiError.notFound();
   animal.etatSante = etatSante;
   await animal.save();
+
+  if (etatSante === 'Malade') {
+    await Alerte.create({
+      niveau: 'Critique',
+      categorie: 'sante_animale',
+      message: `Animal ${animal.identifiant} est passé à l'état Malade`,
+      concerne: animal.identifiant,
+    });
+    const io = getIO();
+    if (io) {
+      io.to('all').emit('alerte:sante', {
+        animalId: animal._id,
+        identifiant: animal.identifiant,
+        message: `Animal ${animal.identifiant} est passé à l'état Malade`,
+      });
+    }
+  }
+
   res.json({ success: true, data: animal });
 });
 
@@ -224,6 +246,9 @@ exports.passeport = asyncHandler(async (req, res) => {
     Parametres.findOne(),
   ]);
 
+  const qrUrl = `${config.clientOrigin}/animaux/${animal.id}`;
+  const qrBuffer = await QRCode.toBuffer(qrUrl, { width: 144, margin: 1 });
+
   res.setHeader('Content-Type', 'application/pdf');
   res.setHeader('Content-Disposition', `attachment; filename="passeport-${animal.identifiant}.pdf"`);
 
@@ -243,7 +268,7 @@ exports.passeport = asyncHandler(async (req, res) => {
     },
     pesees: pesees.map((p) => ({ date: p.date, poids: p.poids, gmq: p.gmq, observateur: p.observateur || '—' })),
     vaccinations: vaccinations.map((v) => ({ produit: v.produit, date: v.dateDebut, veterinaire: v.veterinaire || '—' })),
-  });
+  }, qrBuffer);
 });
 
 // GET /api/animaux/:id/laissez-passer — Laissez-passer de transport (validité 72h)
@@ -284,4 +309,53 @@ exports.laissezPasser = asyncHandler(async (req, res) => {
     dateDepart,
     dateExpiration,
   });
+});
+
+// ─── QR Code (Plan 08) ───────────────────────────────────────────────────────
+// GET /api/animaux/:id/qrcode-card  → application/pdf
+exports.getQrCodeCard = asyncHandler(async (req, res) => {
+  const animal = await Animal.findById(req.params.id).populate('race', 'nom');
+  if (!animal) throw ApiError.notFound('Animal introuvable');
+
+  const url = `${config.clientOrigin}/animaux/${animal.id}`;
+
+  // Generate QR code as PNG buffer to embed in PDF
+  const qrBuffer = await QRCode.toBuffer(url, { width: 200, margin: 1 });
+
+  // Business-card size: 85.6mm × 54mm in points (1mm = 2.835pt)
+  const W = 242;
+  const H = 153;
+
+  const doc = new PDFDocument({ size: [W, H], margin: 0 });
+  res.setHeader('Content-Type', 'application/pdf');
+  res.setHeader('Content-Disposition', `attachment; filename="qrcode-${animal.identifiant}.pdf"`);
+  doc.pipe(res);
+
+  // Background
+  doc.rect(0, 0, W, H).fill('#1B2E1F');
+
+  // QR code on the right
+  doc.image(qrBuffer, W - 110, (H - 100) / 2, { width: 100 });
+
+  // Text on the left
+  const x = 14;
+  doc.fillColor('#FFFFFF').fontSize(9).font('Helvetica-Bold').text('BOVITRACK', x, 14);
+  doc.fontSize(16).text(animal.identifiant, x, 28);
+  doc.fillColor('#A3BFA8').fontSize(8).font('Helvetica').text(animal.race?.nom || '—', x, 50);
+
+  doc.fillColor('#FFFFFF').fontSize(7).font('Helvetica-Bold').text('POIDS', x, 68);
+  doc.fillColor('#A3BFA8').font('Helvetica').text(`${animal.poidsActuel} kg`, x, 78);
+
+  doc.fillColor('#FFFFFF').fontSize(7).font('Helvetica-Bold').text('ÉTAT SANTÉ', x, 92);
+  doc.fillColor('#A3BFA8').font('Helvetica').text(animal.etatSante, x, 102);
+
+  doc.fillColor('#FFFFFF').fontSize(7).font('Helvetica-Bold').text('PHASE', x, 116);
+  doc.fillColor('#A3BFA8').font('Helvetica').text(animal.phase, x, 126);
+
+  doc.fillColor('#6B7280').fontSize(6).text(
+    `Généré le ${new Date().toLocaleDateString('fr-FR')}`,
+    x, H - 16
+  );
+
+  doc.end();
 });

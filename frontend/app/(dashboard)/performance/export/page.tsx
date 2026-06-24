@@ -7,6 +7,10 @@ import DatePicker from "@/components/ui/DatePicker";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
+import { api } from "@/lib/api";
+import { exportCsv } from "@/lib/exportCsv";
+import { useToast } from "@/components/ui/Toast";
+import type { Animal, StockMouvement, Traitement, Distribution } from "@/lib/types";
 
 const EXPORTS = [
   { id: "animaux", label: "Animaux", desc: "Fiche complète, phases, GMQ, coûts", icon: "scan-line" },
@@ -17,15 +21,22 @@ const EXPORTS = [
 
 const FORMATS = [
   { id: "csv", label: "CSV", desc: "Compatible Excel, Google Sheets" },
-  { id: "xlsx", label: "Excel (.xlsx)", desc: "Format natif Microsoft Excel" },
-  { id: "pdf", label: "PDF", desc: "Rapport imprimable" },
 ];
+
+function inRange(dateStr: string, from?: Date, to?: Date) {
+  const d = new Date(dateStr);
+  if (from && d < from) return false;
+  if (to) { const end = new Date(to); end.setHours(23, 59, 59); if (d > end) return false; }
+  return true;
+}
 
 export default function ExportPage() {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [format, setFormat] = useState("csv");
   const [dateDebut, setDateDebut] = useState<Date | undefined>();
   const [dateFin, setDateFin] = useState<Date | undefined>();
+  const [exporting, setExporting] = useState(false);
+  const { success, error: toastError } = useToast();
 
   function toggle(id: string) {
     setSelected((prev) => {
@@ -35,10 +46,84 @@ export default function ExportPage() {
     });
   }
 
-  function handleDownload() {
+  async function handleDownload() {
     if (selected.size === 0) return;
-    // TODO: GET /api/export?modules=...&format=...&from=...&to=...
-    alert(`Export en ${format.toUpperCase()} — ${selected.size} module(s) sélectionné(s)`);
+
+    setExporting(true);
+    try {
+      const stamp = new Date().toISOString().slice(0, 10);
+
+      if (selected.has("animaux")) {
+        const data = await api.get<Animal[]>("/animaux?statut=all");
+        const rows = data.filter((a) => inRange(a.dateEntree, dateDebut, dateFin));
+        exportCsv(`animaux-${stamp}`, [
+          { header: "Identifiant", value: (r) => r.identifiant },
+          { header: "NNI", value: (r) => r.nni },
+          { header: "Race", value: (r) => r.race?.nom ?? "" },
+          { header: "Sexe", value: (r) => r.sexe },
+          { header: "Phase", value: (r) => r.phase },
+          { header: "Poids entrée (kg)", value: (r) => r.poidsEntree },
+          { header: "Poids actuel (kg)", value: (r) => r.poidsActuel },
+          { header: "GMQ (kg/j)", value: (r) => r.gmqActuel },
+          { header: "Coût cumulé (MAD)", value: (r) => r.coutCumule },
+          { header: "État santé", value: (r) => r.etatSante },
+          { header: "Statut", value: (r) => r.statut },
+          { header: "Date entrée", value: (r) => new Date(r.dateEntree).toLocaleDateString("fr-FR") },
+        ], rows);
+      }
+
+      if (selected.has("stocks")) {
+        const data = await api.get<StockMouvement[]>("/stocks/mouvements");
+        const rows = data.filter((m) => inRange(m.date, dateDebut, dateFin));
+        exportCsv(`mouvements-stock-${stamp}`, [
+          { header: "Date", value: (r) => new Date(r.date).toLocaleDateString("fr-FR") },
+          { header: "Article", value: (r) => r.article?.designation ?? "" },
+          { header: "Type", value: (r) => r.type },
+          { header: "Quantité", value: (r) => r.quantite },
+          { header: "Unité", value: (r) => r.article?.unite ?? "" },
+          { header: "Qté après", value: (r) => r.quantiteApres },
+          { header: "Prix unitaire (MAD)", value: (r) => r.prixUnitaire },
+          { header: "Motif", value: (r) => r.motif ?? "" },
+          { header: "Opérateur", value: (r) => r.utilisateur ? `${r.utilisateur.prenom ?? ""} ${r.utilisateur.nom ?? ""}`.trim() : "" },
+        ], rows);
+      }
+
+      if (selected.has("sante")) {
+        const data = await api.get<Traitement[]>("/sante/traitements");
+        const rows = data.filter((t) => inRange(t.dateDebut, dateDebut, dateFin));
+        exportCsv(`traitements-${stamp}`, [
+          { header: "Animal", value: (r) => typeof r.animal === "object" ? (r.animal.identifiant ?? r.animal.id) : r.animal },
+          { header: "Type", value: (r) => r.type },
+          { header: "Produit", value: (r) => r.produit },
+          { header: "Dose", value: (r) => `${r.dose} ${r.doseUnite}` },
+          { header: "Voie", value: (r) => r.voie },
+          { header: "Date début", value: (r) => new Date(r.dateDebut).toLocaleDateString("fr-FR") },
+          { header: "Date fin", value: (r) => r.dateFin ? new Date(r.dateFin).toLocaleDateString("fr-FR") : "" },
+          { header: "Délai retrait (j)", value: (r) => r.delaiRetrait },
+          { header: "Vétérinaire", value: (r) => r.veterinaire },
+          { header: "Statut", value: (r) => r.statut },
+        ], rows);
+      }
+
+      if (selected.has("rations")) {
+        const data = await api.get<Distribution[]>("/rations/distributions");
+        const rows = data.filter((d) => inRange(d.date, dateDebut, dateFin));
+        exportCsv(`distributions-${stamp}`, [
+          { header: "Date", value: (r) => new Date(r.date).toLocaleDateString("fr-FR") },
+          { header: "Ration", value: (r) => r.ration?.nom ?? "" },
+          { header: "Cible", value: (r) => r.cible },
+          { header: "Nb animaux", value: (r) => r.nbAnimaux },
+          { header: "Quantité (kg)", value: (r) => r.quantite },
+          { header: "Coût estimé (MAD)", value: (r) => r.coutEstime },
+        ], rows);
+      }
+
+      success(`Export CSV terminé — ${selected.size} fichier(s) téléchargé(s)`);
+    } catch (err) {
+      toastError(err instanceof Error ? err.message : "Erreur lors de l'export");
+    } finally {
+      setExporting(false);
+    }
   }
 
   return (
@@ -145,11 +230,11 @@ export default function ExportPage() {
               <button
                 type="button"
                 onClick={handleDownload}
-                disabled={selected.size === 0}
+                disabled={selected.size === 0 || exporting}
                 className="flex items-center gap-2 rounded-[6px] bg-primary px-5 py-2.5 font-dm-sans text-[13px] font-semibold text-white hover:bg-primary-hover transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
               >
-                <Icon name="trending-down" size={14} />
-                Télécharger ({selected.size} module{selected.size !== 1 ? "s" : ""})
+                <Icon name={exporting ? "loader" : "download"} size={14} className={exporting ? "animate-spin" : ""} />
+                {exporting ? "Export en cours…" : `Télécharger (${selected.size} module${selected.size !== 1 ? "s" : ""})`}
               </button>
             </div>
           </div>

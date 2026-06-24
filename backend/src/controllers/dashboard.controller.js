@@ -43,7 +43,7 @@ exports.summary = asyncHandler(async (req, res) => {
     .limit(5);
 
   // Active alerts
-  const alertes = await Alerte.find({ traitee: false }).sort('-date').limit(6);
+  const alertes = await Alerte.find({ traitee: false }).sort('-date').limit(5);
   const alertesActives = await Alerte.countDocuments({ traitee: false });
 
   // Ready to sell count

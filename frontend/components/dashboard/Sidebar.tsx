@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import Icon from "@/components/ui/Icon";
 import { useAuth } from "@/lib/auth";
 import { isAdmin } from "@/lib/permissions";
+import { useAlertsContext } from "@/contexts/AlertsContext";
 
 interface NavItem {
   href: string;
@@ -33,6 +34,7 @@ const NAV: NavItem[] = [
 export default function Sidebar() {
   const pathname = usePathname();
   const { user, logout } = useAuth();
+  const { unreadCount } = useAlertsContext();
   const nav = NAV.filter((item) => !item.adminOnly || isAdmin(user?.role));
 
   function isActive(match: string[]) {
@@ -57,6 +59,8 @@ export default function Sidebar() {
         </p>
         {nav.map(({ href, icon, label, match, badge }) => {
           const active = isActive(match);
+          const isAlertes = href === "/performance";
+          const alertBadge = isAlertes && unreadCount > 0 ? unreadCount : null;
           return (
             <Link
               key={href}
@@ -72,6 +76,11 @@ export default function Sidebar() {
               {badge && (
                 <span className="ml-auto rounded-full bg-primary px-1.5 py-0.5 font-dm-sans text-[9px] font-bold uppercase leading-none tracking-wide text-white">
                   {badge}
+                </span>
+              )}
+              {alertBadge && (
+                <span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-danger px-1 font-dm-sans text-[10px] font-bold text-white">
+                  {alertBadge > 99 ? "99+" : alertBadge}
                 </span>
               )}
             </Link>

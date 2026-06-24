@@ -5,6 +5,7 @@ const StockMouvement = require('../models/StockMouvement');
 const Alerte = require('../models/Alerte');
 const Parametres = require('../models/Parametres');
 const { streamRapportStock } = require('../utils/pdfGenerator');
+const { getIO } = require('../socket');
 
 async function checkLowStock(article) {
   if (article.seuil > 0 && article.quantite <= article.seuil) {
@@ -15,6 +16,17 @@ async function checkLowStock(article) {
       message: `Stock ${niveau === 'Critique' ? 'critique' : 'faible'}: ${article.designation} (${article.quantite} ${article.unite})`,
       concerne: article.designation,
     });
+    const io = getIO();
+    if (io) {
+      io.to('all').emit('alerte:stock', {
+        niveau,
+        articleId: article._id,
+        designation: article.designation,
+        quantite: article.quantite,
+        seuil: article.seuil,
+        unite: article.unite,
+      });
+    }
   }
 }
 
