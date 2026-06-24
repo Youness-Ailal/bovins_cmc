@@ -207,26 +207,18 @@ export default function FicheAnimalPage({ params }: { params: Promise<{ id: stri
             <div className="flex flex-col gap-0.5">
               <span className="font-inter text-[11px] text-placeholder">Poids actuel</span>
               <span className="font-dm-sans text-[20px] font-bold leading-none text-label">{animal.poidsActuel} <span className="text-[13px] font-normal text-subtle">kg</span></span>
-              <span className={`font-inter text-[11px] ${poidsGain >= 0 ? "text-success" : "text-danger"}`}>
-                {poidsGain >= 0 ? "+" : ""}{poidsGain.toFixed(1)} kg depuis entrée
-              </span>
             </div>
             <div className="flex flex-col gap-0.5">
               <span className="font-inter text-[11px] text-placeholder">GMQ actuel</span>
               <span className="font-dm-sans text-[20px] font-bold leading-none text-primary">{animal.gmqActuel} <span className="text-[13px] font-normal text-subtle">kg/j</span></span>
-              {animal.race?.gmqCible && (
-                <span className="font-inter text-[11px] text-subtle">cible {animal.race.gmqCible} kg/j</span>
-              )}
             </div>
             <div className="flex flex-col gap-0.5">
               <span className="font-inter text-[11px] text-placeholder">Élevage</span>
               <span className="font-dm-sans text-[20px] font-bold leading-none text-label">{joursElevage} <span className="text-[13px] font-normal text-subtle">j</span></span>
-              <span className="font-inter text-[11px] text-subtle">depuis {new Date(animal.dateEntree).toLocaleDateString("fr-FR")}</span>
             </div>
             <div className="flex flex-col gap-0.5">
               <span className="font-inter text-[11px] text-placeholder">Coût cumulé</span>
               <span className="font-dm-sans text-[20px] font-bold leading-none text-label">{animal.coutCumule.toLocaleString("fr-FR")} <span className="text-[13px] font-normal text-subtle">MAD</span></span>
-              <span className="font-inter text-[11px] text-subtle">{coutParKg} MAD/kg</span>
             </div>
           </div>
         </div>

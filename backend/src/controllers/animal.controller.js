@@ -247,7 +247,7 @@ exports.passeport = asyncHandler(async (req, res) => {
   ]);
 
   const qrUrl = `${config.clientOrigin}/animaux/${animal.id}`;
-  const qrBuffer = await QRCode.toBuffer(qrUrl, { width: 144, margin: 1 });
+  const qrBuffer = await QRCode.toBuffer(qrUrl, { width: 400, margin: 1 });
 
   res.setHeader('Content-Type', 'application/pdf');
   res.setHeader('Content-Disposition', `attachment; filename="passeport-${animal.identifiant}.pdf"`);

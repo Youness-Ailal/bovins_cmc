@@ -261,13 +261,6 @@ function createKpiRow(doc, items) {
 function streamPasseport(res, data, qrBuffer) {
   const doc = newDoc(res);
 
-  // Place QR code in the top-right corner before the header draws text
-  if (qrBuffer) {
-    const qrSize = 72;
-    const x = doc.page.width - doc.page.margins.right - qrSize;
-    doc.image(qrBuffer, x, doc.page.margins.top, { width: qrSize });
-  }
-
   createHeader(doc, 'Passeport Bovin Officiel', `Identifiant : ${data.identifiantFerme}`);
 
   createSection(doc, 'Identification de l’animal');
@@ -314,7 +307,22 @@ function streamPasseport(res, data, qrBuffer) {
     data.vaccinations.map((v) => [v.produit, formatDate(v.date), v.veterinaire])
   );
 
-  finalize(doc);
+  // Stamp footer on all pages, then place QR centered at bottom of last page
+  const range = doc.bufferedPageRange();
+  for (let i = range.start; i < range.start + range.count; i += 1) {
+    doc.switchToPage(i);
+    doc.page.margins.bottom = 0;
+    if (qrBuffer && i === range.start + range.count - 1) {
+      // Last page: centered QR instead of text footer
+      const qrSize = 220;
+      const x = (doc.page.width - qrSize) / 2;
+      const y = doc.page.height - qrSize - 20;
+      doc.image(qrBuffer, x, y, { width: qrSize });
+    } else {
+      drawFooter(doc);
+    }
+  }
+  doc.end();
 }
 
 function streamLaissezPasser(res, data) {
