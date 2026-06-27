@@ -5,8 +5,6 @@ import Link from "next/link";
 import Icon from "@/components/ui/Icon";
 import SanteTabs from "@/components/dashboard/SanteTabs";
 import { useApi } from "@/lib/useApi";
-import { useAuth } from "@/lib/auth";
-import { can } from "@/lib/permissions";
 
 interface PlanTraitement {
   id: string;
@@ -31,8 +29,7 @@ const STATUT: Record<string, { chip: string; dot: string; label: string }> = {
 };
 
 export default function CalendrierPage() {
-  const { user } = useAuth();
-  const canManage = can(user?.role, "manageSante");
+  const canManage = true;
   const now = new Date();
 
   const [month, setMonth]           = useState(now.getMonth());

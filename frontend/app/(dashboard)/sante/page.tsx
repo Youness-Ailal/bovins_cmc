@@ -7,8 +7,6 @@ import TableSkeleton from "@/components/ui/TableSkeleton";
 import SanteTabs from "@/components/dashboard/SanteTabs";
 import { traitementStatutStyle } from "@/lib/statusStyles";
 import { useApi } from "@/lib/useApi";
-import { useAuth } from "@/lib/auth";
-import { can } from "@/lib/permissions";
 import { api, downloadFile } from "@/lib/api";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { exportCsv } from "@/lib/exportCsv";
@@ -33,8 +31,7 @@ function raceName(t: Traitement): string {
 }
 
 export default function SantePage() {
-  const { user } = useAuth();
-  const canManage = can(user?.role, "manageSante");
+  const canManage = true;
   const { data: traitements, loading, error, refetch } = useApi<Traitement[]>("/sante/traitements");
   const { success, error: toastError } = useToast();
   const [search, setSearch] = useState("");

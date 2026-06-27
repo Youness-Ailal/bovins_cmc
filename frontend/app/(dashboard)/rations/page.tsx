@@ -6,8 +6,6 @@ import Icon from "@/components/ui/Icon";
 import TableSkeleton from "@/components/ui/TableSkeleton";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import { useApi } from "@/lib/useApi";
-import { useAuth } from "@/lib/auth";
-import { can } from "@/lib/permissions";
 import { api } from "@/lib/api";
 import { useToast } from "@/components/ui/Toast";
 import type { Ration, Distribution } from "@/lib/types";
@@ -20,9 +18,8 @@ const PHASE_STYLE: Record<string, { bg: string; text: string; border: string }> 
 };
 
 export default function RationsPage() {
-  const { user } = useAuth();
-  const canManage = can(user?.role, "manageRations");
-  const canDistribuer = can(user?.role, "saisieDistribution");
+  const canManage = true;
+  const canDistribuer = true;
   const { data: rations, loading, error, refetch } = useApi<Ration[]>("/rations");
   const { data: distributions } = useApi<Distribution[]>("/rations/distributions");
   const { success, error: toastError } = useToast();

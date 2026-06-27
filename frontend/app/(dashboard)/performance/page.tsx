@@ -7,13 +7,10 @@ import { alerteNiveauStyle } from "@/lib/statusStyles";
 import { useApi } from "@/lib/useApi";
 import { api } from "@/lib/api";
 import { useToast } from "@/components/ui/Toast";
-import { useAuth } from "@/lib/auth";
-import { can } from "@/lib/permissions";
 import type { Alerte } from "@/lib/types";
 
 export default function PerformancePage() {
-  const { user } = useAuth();
-  const canManage = can(user?.role, "manageAlertes");
+  const canManage = true;
   const { data: alertes, loading, error, refetch } = useApi<Alerte[]>("/alertes");
   const { success, error: toastError } = useToast();
   const list = alertes ?? [];

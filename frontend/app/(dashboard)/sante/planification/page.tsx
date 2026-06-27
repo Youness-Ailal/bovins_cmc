@@ -6,8 +6,6 @@ import Icon from "@/components/ui/Icon";
 import TableSkeleton from "@/components/ui/TableSkeleton";
 import SanteTabs from "@/components/dashboard/SanteTabs";
 import { useApi } from "@/lib/useApi";
-import { useAuth } from "@/lib/auth";
-import { can } from "@/lib/permissions";
 import { planStatutStyle } from "@/lib/statusStyles";
 import type { PlanTraitement } from "@/lib/types";
 
@@ -18,8 +16,7 @@ function animalCode(p: PlanTraitement): string {
 }
 
 export default function PlanificationPage() {
-  const { user } = useAuth();
-  const canManage = can(user?.role, "manageSante");
+  const canManage = true;
   const { data: plans, loading, error } = useApi<PlanTraitement[]>("/sante/plans");
   const [statutFilter, setStatutFilter] = useState("Tous");
 

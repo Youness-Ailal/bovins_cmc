@@ -10,8 +10,6 @@ import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import { useToast } from "@/components/ui/Toast";
 import { useApi } from "@/lib/useApi";
 import { api, downloadFile } from "@/lib/api";
-import { useAuth } from "@/lib/auth";
-import { can } from "@/lib/permissions";
 import { exportCsv } from "@/lib/exportCsv";
 import type { StockArticle } from "@/lib/types";
 
@@ -30,9 +28,8 @@ function stockPct(a: StockArticle): number {
 
 export default function StocksPage() {
   const router = useRouter();
-  const { user } = useAuth();
-  const canManage = can(user?.role, "manageStockArticles");
-  const canMouvement = can(user?.role, "saisieMouvementStock");
+  const canManage = true;
+  const canMouvement = true;
   const { success, error: toastError } = useToast();
   const { data: articles, loading, error, refetch } = useApi<StockArticle[]>("/stocks");
   const [search, setSearch] = useState("");

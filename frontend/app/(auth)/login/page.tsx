@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Button from "@/components/ui/button";
 import InputField from "@/components/ui/InputField";
@@ -23,23 +22,20 @@ export default function LoginPage() {
       await login(email, password);
       router.push("/dashboard");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Échec de la connexion");
+      setError(err instanceof Error ? err.message : "Echec de la connexion");
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <div className="w-full max-w-[400px] flex flex-col gap-8">
+    <div className="flex w-full max-w-[400px] flex-col gap-8">
       <div className="flex flex-col gap-2">
-        <h1
-          className="font-dm-sans text-[32px] font-bold text-label"
-          style={{ letterSpacing: "-0.5px" }}
-        >
+        <h1 className="font-dm-sans text-[32px] font-bold text-label">
           Connexion
         </h1>
-        <p className="font-inter text-[15px] text-subtle leading-relaxed">
-          Accédez à votre espace de gestion
+        <p className="font-inter text-[15px] leading-relaxed text-subtle">
+          Accedez a votre espace de gestion
         </p>
       </div>
 
@@ -56,26 +52,18 @@ export default function LoginPage() {
         />
 
         <div className="flex flex-col gap-1.5">
-          <div className="flex items-center justify-between">
-            <label htmlFor="password" className="font-inter text-sm font-medium text-label">
-              Mot de passe
-            </label>
-            <Link
-              href="/forgot-password"
-              className="font-inter text-[13px] font-medium text-primary hover:text-primary-hover transition-colors"
-            >
-              Mot de passe oublié ?
-            </Link>
-          </div>
+          <label htmlFor="password" className="font-inter text-sm font-medium text-label">
+            Mot de passe
+          </label>
           <input
             id="password"
             type="password"
-            placeholder="••••••••"
+            placeholder="Mot de passe"
             autoComplete="current-password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
-            className="h-11 w-full rounded border border-border px-[14px] font-inter text-sm text-label bg-input placeholder:text-placeholder transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+            className="h-11 w-full rounded border border-border bg-input px-[14px] font-inter text-sm text-label placeholder:text-placeholder transition-colors focus:border-transparent focus:outline-none focus:ring-2 focus:ring-primary"
           />
         </div>
 
@@ -85,10 +73,10 @@ export default function LoginPage() {
 
         <div className="flex flex-col gap-5 pt-1">
           <Button type="submit" className="w-full" disabled={loading}>
-            {loading ? "Connexion…" : "Se connecter"}
+            {loading ? "Connexion..." : "Se connecter"}
           </Button>
-          <p className="font-inter text-[13px] text-subtle text-center">
-            Démo : youness@bovitrack.ma / password123
+          <p className="text-center font-inter text-[13px] text-subtle">
+            Demo : youness@bovitrack.ma / password123
           </p>
         </div>
       </form>

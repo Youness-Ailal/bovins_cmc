@@ -16,7 +16,7 @@ export const alerteNiveauStyle: Record<string, string> = {
 export const userRoleStyle: Record<string, string> = {
   "Admin":       "bg-[#E8E8F2] text-[#00006B]",
   "Responsable": "bg-[#DFF0E4] text-[#004D1A]",
-  "Opérateur":   "bg-[#EDE7DC] text-[#7A3F00]",
+  "Vétérinaire": "bg-[#E0ECFF] text-info",
 };
 
 export const planStatutStyle: Record<string, string> = {

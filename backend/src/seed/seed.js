@@ -38,7 +38,8 @@ async function run() {
     { prenom: 'Youness', nom: 'Ailal', email: 'youness@bovitrack.ma', password: 'password123', role: 'Admin', statut: 'Actif' },
     { prenom: 'Salma', nom: 'Benali', email: 'salma@bovitrack.ma', password: 'password123', role: 'Responsable', statut: 'Actif' },
     { prenom: 'Mohamed', nom: 'Ouali', email: 'mohamed@bovitrack.ma', password: 'password123', role: 'Vétérinaire', statut: 'Actif' },
-    { prenom: 'Hajar', nom: 'Idrissi', email: 'hajar@bovitrack.ma', password: 'password123', role: 'Opérateur', statut: 'Inactif' },
+    { prenom: 'Hajar', nom: 'Idrissi', email: 'hajar@bovitrack.ma', password: 'password123', role: 'Responsable', statut: 'Actif' },
+    { prenom: 'Safouane', nom: 'El Amrani', email: 'safouane@bovitrack.ma', password: 'password123', role: 'Responsable', statut: 'Actif' },
   ]);
 
   // ── Races ──

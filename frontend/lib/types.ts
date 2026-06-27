@@ -6,7 +6,7 @@ export interface User {
   nom: string;
   fullName?: string;
   email: string;
-  role: "Admin" | "Responsable" | "Vétérinaire" | "Opérateur";
+  role: "Admin" | "Responsable" | "Vétérinaire";
   statut: "Actif" | "Inactif";
   derniereConnexion?: string;
 }

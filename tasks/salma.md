@@ -23,12 +23,13 @@ configuration de la ferme. C'est moi qui ouvre la démo (la connexion).
 ## Code derrière (backend)
 - `controllers/auth.controller.js` — connexion, mot de passe oublié/réinitialisation
 - `middleware/auth.js` — `protect` (vérifie le JWT) + `restrictTo` (vérifie le rôle)
-- `config/roles.js` — les 4 rôles et leurs permissions ; `lib/permissions.ts` (côté écran)
+- `config/roles.js` — les 3 rôles et leurs permissions ; `lib/permissions.ts` (côté écran)
 - `controllers/user.controller.js`, `race.controller.js`, `parametres.controller.js`
 
 ## Ce que je dois dire (points clés)
 1. **JWT** : à la connexion, le serveur renvoie un token ; chaque requête est protégée par `protect`.
-2. **RBAC (rôles)** : 4 rôles — Admin, Responsable, Vétérinaire, Opérateur. La sécurité
+2. **RBAC (rôles)** : 3 rôles — Admin, Responsable, Vétérinaire, .
+La sécurité
    est **côté serveur** (`restrictTo`) ; côté écran on cache juste les boutons interdits.
 3. Les **races** servent de référence aux calculs (poids cible, GMQ cible).
 

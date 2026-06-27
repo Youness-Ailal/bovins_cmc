@@ -17,8 +17,8 @@ const userSchema = new mongoose.Schema(
     password: { type: String, required: [true, 'Le mot de passe est requis'], minlength: 6, select: false },
     role: {
       type: String,
-      enum: ['Admin', 'Responsable', 'Vétérinaire', 'Opérateur'],
-      default: 'Opérateur',
+      enum: ['Admin', 'Responsable', 'Vétérinaire'],
+      default: 'Responsable',
     },
     statut: { type: String, enum: ['Actif', 'Inactif'], default: 'Actif' },
     derniereConnexion: { type: Date },
@@ -28,12 +28,10 @@ const userSchema = new mongoose.Schema(
 
 userSchema.plugin(toJSON);
 
-// Virtual full name
 userSchema.virtual('fullName').get(function () {
   return `${this.prenom} ${this.nom}`;
 });
 
-// Hash password before save when modified (Mongoose 9: async hooks omit `next`)
 userSchema.pre('save', async function () {
   if (!this.isModified('password')) return;
   this.password = await bcrypt.hash(this.password, 10);

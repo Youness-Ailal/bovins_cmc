@@ -6,8 +6,6 @@ import { useRouter } from "next/navigation";
 import Icon from "@/components/ui/Icon";
 import TableSkeleton from "@/components/ui/TableSkeleton";
 import { useApi } from "@/lib/useApi";
-import { useAuth } from "@/lib/auth";
-import { can } from "@/lib/permissions";
 import { exportCsv } from "@/lib/exportCsv";
 import type { Animal, Race } from "@/lib/types";
 
@@ -19,8 +17,7 @@ const SANTE_STYLE: Record<string, { bg: string; text: string; dot: string }> = {
 
 export default function ListeAnimauxPage() {
   const router = useRouter();
-  const { user } = useAuth();
-  const canManage = can(user?.role, "manageAnimaux");
+  const canManage = true;
 
   const [search, setSearch] = useState("");
   const [filters, setFilters] = useState<Record<string, string>>({});

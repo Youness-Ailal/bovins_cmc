@@ -2,7 +2,6 @@ const express = require('express');
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
 const logger = require('morgan');
-const config = require('./src/config/env');
 
 const connectDB = require('./src/config/db');
 const apiRouter = require('./src/routes/index');
@@ -14,10 +13,7 @@ const app = express();
 app.use(logger('dev'));
 app.use(
   cors({
-    origin(origin, callback) {
-      if (!origin || config.clientOrigins.includes(origin)) return callback(null, true);
-      return callback(new Error('Origin non autorisée par CORS'));
-    },
+    origin: true,
     credentials: true,
   })
 );

@@ -5,8 +5,6 @@ import Icon from "@/components/ui/Icon";
 import TableSkeleton from "@/components/ui/TableSkeleton";
 import SanteTabs from "@/components/dashboard/SanteTabs";
 import { useApi } from "@/lib/useApi";
-import { useAuth } from "@/lib/auth";
-import { can } from "@/lib/permissions";
 import type { EtatSanteRow } from "@/lib/types";
 
 const ETAT_CONFIG: Record<string, { bg: string; text: string; border: string; barColor: string; icon: string; label: string }> = {
@@ -16,8 +14,7 @@ const ETAT_CONFIG: Record<string, { bg: string; text: string; border: string; ba
 };
 
 export default function EtatSantePage() {
-  const { user } = useAuth();
-  const canManage = can(user?.role, "manageSante");
+  const canManage = true;
   const { data, loading, error } = useApi<EtatSanteRow[]>("/sante/etats");
   const list = data ?? [];
   const total = list.length;

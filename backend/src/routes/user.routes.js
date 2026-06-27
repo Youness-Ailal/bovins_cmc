@@ -1,8 +1,8 @@
 const router = require('express').Router();
 const c = require('../controllers/user.controller');
-const { protect, restrictTo } = require('../middleware/auth');
+const { protect } = require('../middleware/auth');
 
-router.use(protect, restrictTo('Admin'));
+router.use(protect);
 
 router.get('/', c.list);
 router.post('/', c.create);

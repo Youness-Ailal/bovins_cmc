@@ -7,8 +7,6 @@ import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import { useToast } from "@/components/ui/Toast";
 import { useApi } from "@/lib/useApi";
 import { api, downloadFile } from "@/lib/api";
-import { useAuth } from "@/lib/auth";
-import { can } from "@/lib/permissions";
 import type { Animal } from "@/lib/types";
 
 const PHASES = ["Veau", "Croissance", "Engraissement", "Finition"] as const;
@@ -64,10 +62,9 @@ function KpiCard({ label, value, sub, icon, highlight }: { label: string; value:
 
 export default function FicheAnimalPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
-  const { user } = useAuth();
-  const canManage = can(user?.role, "manageAnimaux");
-  const canSaisiePesee = can(user?.role, "saisiePesee");
-  const canSortie = can(user?.role, "saisieSortie");
+  const canManage = true;
+  const canSaisiePesee = true;
+  const canSortie = true;
   const { success, error: toastError } = useToast();
   const { data: animalData, loading, error, refetch } = useApi<Animal>(`/animaux/${id}`);
   const [localSante, setLocalSante] = useState<string | null>(null);

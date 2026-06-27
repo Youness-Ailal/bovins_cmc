@@ -84,7 +84,7 @@ export default function ExportPage() {
           { header: "Qté après", value: (r) => r.quantiteApres },
           { header: "Prix unitaire (MAD)", value: (r) => r.prixUnitaire },
           { header: "Motif", value: (r) => r.motif ?? "" },
-          { header: "Opérateur", value: (r) => r.utilisateur ? `${r.utilisateur.prenom ?? ""} ${r.utilisateur.nom ?? ""}`.trim() : "" },
+          { header: "Utilisateur", value: (r) => r.utilisateur ? `${r.utilisateur.prenom ?? ""} ${r.utilisateur.nom ?? ""}`.trim() : "" },
         ], rows);
       }
 

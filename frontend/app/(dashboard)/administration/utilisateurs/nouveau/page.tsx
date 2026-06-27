@@ -11,7 +11,9 @@ import {
 } from "@/components/ui/select";
 
 const ROLE_MAP: Record<string, string> = {
-  admin: "Admin", responsable: "Responsable", veterinaire: "Vétérinaire", operateur: "Opérateur",
+  admin: "Admin",
+  responsable: "Responsable",
+  veterinaire: "Vétérinaire",
 };
 
 function FormField({ label, children, hint }: { label: string; children: React.ReactNode; hint?: string }) {
@@ -103,7 +105,6 @@ export default function NouvelUtilisateurPage() {
                     <SelectItem value="admin">Administrateur — accès total</SelectItem>
                     <SelectItem value="responsable">Responsable ferme — lecture + écriture</SelectItem>
                     <SelectItem value="veterinaire">Vétérinaire — santé & traitements</SelectItem>
-                    <SelectItem value="operateur">Opérateur — lecture seule + saisie</SelectItem>
                   </SelectContent>
                 </Select>
               </FormField>

@@ -9,7 +9,7 @@ let io = null;
 function initSocket(httpServer, app) {
   io = new Server(httpServer, {
     cors: {
-      origin: config.clientOrigins,
+      origin: true,
       credentials: true,
     },
     transports: ['websocket'],

@@ -1,25 +1,25 @@
 "use client";
 
 import { useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth";
+import { canAccessPath } from "@/lib/roleAccess";
 
-/**
- * Blocks dashboard rendering until auth is resolved; redirects to /login
- * when there is no authenticated user.
- */
 export default function AuthGuard({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
   const router = useRouter();
+  const pathname = usePathname();
+  const authorized = !!user && canAccessPath(user.role, pathname);
 
   useEffect(() => {
     if (!loading && !user) router.replace("/login");
-  }, [loading, user, router]);
+    else if (!loading && user && !authorized) router.replace("/dashboard");
+  }, [authorized, loading, router, user]);
 
-  if (loading || !user) {
+  if (loading || !user || !authorized) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-surface">
-        <span className="font-inter text-sm text-placeholder">Chargement…</span>
+        <span className="font-inter text-sm text-placeholder">Chargement...</span>
       </div>
     );
   }

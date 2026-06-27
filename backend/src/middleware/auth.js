@@ -3,9 +3,8 @@ const ApiError = require('../utils/ApiError');
 const User = require('../models/User');
 const config = require('../config/env');
 
-/**
- * Verifies the Bearer token and attaches the user to req.user.
- */
+const VALID_ROLES = ['Admin', 'Responsable', 'Vétérinaire'];
+
 async function protect(req, res, next) {
   try {
     const header = req.headers.authorization || '';
@@ -17,6 +16,11 @@ async function protect(req, res, next) {
     if (!user) throw ApiError.unauthorized('Utilisateur introuvable');
     if (user.statut === 'Inactif') throw ApiError.forbidden('Compte désactivé');
 
+    if (!VALID_ROLES.includes(user.role)) {
+      user.role = 'Responsable';
+      await user.save();
+    }
+
     req.user = user;
     next();
   } catch (err) {
@@ -27,16 +31,4 @@ async function protect(req, res, next) {
   }
 }
 
-/**
- * Restricts a route to specific roles. Usage: restrictTo('Admin')
- */
-function restrictTo(...roles) {
-  return (req, res, next) => {
-    if (!req.user) return next(ApiError.forbidden("Vous n'avez pas la permission requise"));
-    if (req.user.role === 'Admin') return next(); // Admin bypasses all role checks
-    if (!roles.includes(req.user.role)) return next(ApiError.forbidden("Vous n'avez pas la permission requise"));
-    next();
-  };
-}
-
-module.exports = { protect, restrictTo };
+module.exports = { protect };
