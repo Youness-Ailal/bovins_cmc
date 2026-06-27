@@ -4,19 +4,25 @@
  * Module dependencies.
  */
 
-const server = require('../app');
+const http = require('http');
+const app = require('../app');
 const debug = require('debug')('backend:server');
 const config = require('../src/config/env');
+const { initSocket } = require('../src/socket');
 
 /**
  * Get port from environment and store in Express.
  */
 
 const port = normalizePort(String(config.port));
+app.set('port', port);
 
 /**
  * Listen on provided port, on all network interfaces.
  */
+
+const server = http.createServer(app);
+initSocket(server, app);
 
 server.listen(port);
 server.on('error', onError);

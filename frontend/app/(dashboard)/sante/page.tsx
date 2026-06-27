@@ -9,7 +9,8 @@ import { traitementStatutStyle } from "@/lib/statusStyles";
 import { useApi } from "@/lib/useApi";
 import { useAuth } from "@/lib/auth";
 import { can } from "@/lib/permissions";
-import { downloadFile } from "@/lib/api";
+import { api, downloadFile } from "@/lib/api";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { exportCsv } from "@/lib/exportCsv";
 import { useToast } from "@/components/ui/Toast";
 import type { Traitement } from "@/lib/types";
@@ -34,11 +35,25 @@ function raceName(t: Traitement): string {
 export default function SantePage() {
   const { user } = useAuth();
   const canManage = can(user?.role, "manageSante");
-  const { data: traitements, loading, error } = useApi<Traitement[]>("/sante/traitements");
+  const { data: traitements, loading, error, refetch } = useApi<Traitement[]>("/sante/traitements");
   const { success, error: toastError } = useToast();
   const [search, setSearch] = useState("");
   const [statutFilter, setStatutFilter] = useState("Tous");
   const [exporting, setExporting] = useState(false);
+  const [updatingId, setUpdatingId] = useState<string | null>(null);
+
+  async function handleStatutChange(id: string, statut: string) {
+    setUpdatingId(id);
+    try {
+      await api.put(`/sante/traitements/${id}`, { statut });
+      success("Statut du traitement mis à jour");
+      refetch();
+    } catch (err) {
+      toastError(err instanceof Error ? err.message : "Erreur");
+    } finally {
+      setUpdatingId(null);
+    }
+  }
 
   const list = traitements ?? [];
   const countOf = (s: string) => list.filter((t) => t.statut === s).length;
@@ -231,9 +246,30 @@ export default function SantePage() {
                           {t.dateFin ? new Date(t.dateFin).toLocaleDateString("fr-FR") : "—"}
                         </td>
                         <td className="px-4 py-3.5">
-                          <span className={`inline-flex rounded-full px-2.5 py-1 font-inter text-[11px] font-semibold ${traitementStatutStyle[t.statut] ?? "bg-surface text-subtle"}`}>
-                            {t.statut}
-                          </span>
+                          {canManage ? (
+                            <Select
+                              value={t.statut}
+                              disabled={updatingId === t.id}
+                              onValueChange={(v) => v && v !== t.statut && handleStatutChange(t.id, v)}
+                            >
+                              <SelectTrigger
+                                size="sm"
+                                aria-label="Changer le statut du traitement"
+                                className={`w-fit gap-1 rounded-full border-0 px-2.5 font-inter text-[11px] font-semibold shadow-none focus-visible:ring-0 ${traitementStatutStyle[t.statut] ?? "bg-surface text-subtle"}`}
+                              >
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent className="font-inter">
+                                {["En cours", "Planifié", "Terminé"].map((s) => (
+                                  <SelectItem key={s} value={s}>{s}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          ) : (
+                            <span className={`inline-flex rounded-full px-2.5 py-1 font-inter text-[11px] font-semibold ${traitementStatutStyle[t.statut] ?? "bg-surface text-subtle"}`}>
+                              {t.statut}
+                            </span>
+                          )}
                         </td>
                       </tr>
                     );

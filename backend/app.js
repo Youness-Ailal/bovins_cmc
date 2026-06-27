@@ -2,13 +2,11 @@ const express = require('express');
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
 const logger = require('morgan');
-const http = require('http');
 const config = require('./src/config/env');
 
 const connectDB = require('./src/config/db');
 const apiRouter = require('./src/routes/index');
 const { notFound, errorHandler } = require('./src/middleware/errorHandler');
-const { initSocket } = require('./src/socket');
 
 const app = express();
 
@@ -47,8 +45,4 @@ app.use('/api', apiRouter);
 app.use(notFound);
 app.use(errorHandler);
 
-const server = http.createServer(app);
-initSocket(server, app);
-
-module.exports = server;
-module.exports.app = app;
+module.exports = app;

@@ -43,4 +43,12 @@ function getIO() {
   return io;
 }
 
-module.exports = { initSocket, getIO };
+function emitAlerte(alerte) {
+  if (io) io.to('all').emit('alerte:new', alerte);
+}
+
+function emitToUser(userId, event, payload) {
+  if (io) io.to(`user:${userId}`).emit(event, payload);
+}
+
+module.exports = { initSocket, getIO, emitAlerte, emitToUser };

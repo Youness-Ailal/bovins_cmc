@@ -1,5 +1,5 @@
 const Alerte = require('../models/Alerte');
-const { emitAlerte } = require('../socket/io');
+const { emitAlerte } = require('../socket');
 
 /**
  * Single entry point for raising an alert: persists it to MongoDB (as before)

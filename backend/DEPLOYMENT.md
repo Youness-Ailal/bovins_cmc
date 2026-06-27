@@ -5,6 +5,8 @@
 - Import the repository into Vercel.
 - Set **Root Directory** to `backend`.
 - Leave Framework Preset and build settings on automatic detection.
+- The project includes `vercel.json`, which routes all backend requests to
+  `api/index.js`.
 
 ## Environment variables
 
@@ -30,6 +32,14 @@ For stricter production networking, use a fixed-egress/private-network option.
 Set the frontend variable to the deployed backend URL:
 
 `NEXT_PUBLIC_API_URL=https://YOUR-BACKEND.vercel.app/api`
+
+## Realtime limitation
+
+The REST API works on Vercel serverless functions. Socket.IO/WebSocket realtime
+events are only initialized by `npm start` on a traditional Node server and are
+not available from the Vercel deployment. If realtime alerts are required in
+production, deploy the backend on a long-running Node host such as Railway,
+Render, Fly.io, or a VPS, or move realtime events to a managed realtime service.
 
 ## Verification
 
