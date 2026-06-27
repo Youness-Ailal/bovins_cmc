@@ -3,31 +3,18 @@
 ```mermaid
 sequenceDiagram
     actor Veterinaire
-    participant Frontend as Page Nouveau Traitement
-    participant API as API Sante
-    participant Middleware as Middleware protect
-    participant Controller as SanteController
-    participant Traitement as TraitementModel
-    participant Animal as AnimalModel
-    participant Stock as StockArticleModel
-    participant Alertes as AlertService
-    participant DB as MongoDB
+    participant Interface as Page Nouveau Traitement
+    participant Serveur as Serveur API
+    participant DB as Base de donnees
 
-    Veterinaire->>Frontend: Saisir traitement
-    Frontend->>API: POST /api/sante/traitements
-    API->>Middleware: Verifier token JWT
-    Middleware-->>API: Utilisateur authentifie
-    API->>Controller: createTraitement(data)
-    Controller->>Traitement: create(traitement)
-    Traitement->>DB: Inserer traitement
-    Controller->>Animal: Mettre a jour etatSante et delaiRetraitFin
-    Animal->>DB: update animal
-    Controller->>Stock: Deduire medicament si article selectionne
-    Stock->>DB: update quantite
-    Controller->>Alertes: Verifier alertes traitement/retrait
-    Alertes->>DB: Creer alerte si necessaire
-    Controller-->>API: Reponse 201
-    API-->>Frontend: Traitement cree
-    Frontend-->>Veterinaire: Afficher succes
+    Veterinaire->>Interface: Saisir traitement
+    Interface->>Serveur: Envoyer traitement
+    Serveur->>Serveur: Calculer delai de retrait
+    Serveur->>DB: Enregistrer traitement
+    Serveur->>DB: Mettre a jour animal et stock medicament
+    Serveur->>DB: Creer alerte si necessaire
+    DB-->>Serveur: Traitement cree
+    Serveur-->>Interface: Confirmation
+    Interface-->>Veterinaire: Afficher succes
 ```
 

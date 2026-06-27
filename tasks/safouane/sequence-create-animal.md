@@ -3,24 +3,16 @@
 ```mermaid
 sequenceDiagram
     actor Responsable as Responsable elevage
-    participant Frontend as Formulaire Animal
-    participant API as API Animaux
-    participant Middleware as Middleware protect
-    participant Controller as AnimalController
-    participant Animal as AnimalModel
-    participant DB as MongoDB
+    participant Interface as Formulaire Animal
+    participant Serveur as Serveur API
+    participant DB as Base de donnees
 
-    Responsable->>Frontend: Remplir formulaire animal
-    Frontend->>API: POST /api/animaux
-    API->>Middleware: Verifier token JWT
-    Middleware-->>API: Utilisateur authentifie
-    API->>Controller: create(req.body)
-    Controller->>Animal: create(data)
-    Animal->>DB: Inserer animal
-    DB-->>Animal: Animal cree
-    Animal-->>Controller: Animal
-    Controller-->>API: Reponse 201
-    API-->>Frontend: Animal cree
-    Frontend-->>Responsable: Redirection fiche animal
+    Responsable->>Interface: Remplir les informations animal
+    Interface->>Serveur: Envoyer animal
+    Serveur->>Serveur: Verifier session et donnees
+    Serveur->>DB: Enregistrer animal
+    DB-->>Serveur: Animal cree
+    Serveur-->>Interface: Confirmation
+    Interface-->>Responsable: Ouvrir fiche animal
 ```
 

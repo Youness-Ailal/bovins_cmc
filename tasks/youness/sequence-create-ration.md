@@ -3,24 +3,16 @@
 ```mermaid
 sequenceDiagram
     actor Responsable as Responsable alimentation
-    participant Frontend as Page Nouvelle Ration
-    participant API as API Rations
-    participant Middleware as Middleware protect
-    participant Controller as RationController
-    participant Ration as RationModel
-    participant DB as MongoDB
+    participant Interface as Page Nouvelle Ration
+    participant Serveur as Serveur API
+    participant DB as Base de donnees
 
-    Responsable->>Frontend: Saisir ration et ingredients
-    Frontend->>API: POST /api/rations
-    API->>Middleware: Verifier token JWT
-    Middleware-->>API: Utilisateur authentifie
-    API->>Controller: create(req.body)
-    Controller->>Ration: create(data)
-    Ration->>DB: Inserer ration
-    DB-->>Ration: Ration creee
-    Ration-->>Controller: Ration
-    Controller-->>API: Reponse 201
-    API-->>Frontend: Ration creee
-    Frontend-->>Responsable: Redirection liste rations
+    Responsable->>Interface: Saisir ration et ingredients
+    Interface->>Serveur: Envoyer ration
+    Serveur->>Serveur: Verifier session et donnees
+    Serveur->>DB: Enregistrer ration
+    DB-->>Serveur: Ration creee
+    Serveur-->>Interface: Confirmation
+    Interface-->>Responsable: Retour liste rations
 ```
 
