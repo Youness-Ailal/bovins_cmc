@@ -105,26 +105,47 @@ async function run() {
 
   // ── Animals ──
   console.log('Seeding animals…');
+  // dateEntree is per-animal: several enter within the last 30 days so the
+  // dashboard cost breakdown (achat/vétérinaire are period-filtered) populates
+  // for the default "30 derniers jours" view, the rest are spread over the year.
   const animalsData = [
-    { identifiant: 'ANI-001', race: 'Holstein', sexe: 'Mâle', phase: 'Croissance', parcelle: 'Parcelle Alpha', etatSante: 'Sain', poidsActuel: 320, gmqActuel: 0.82, coutCumule: 12450 },
-    { identifiant: 'ANI-002', race: 'Angus', sexe: 'Femelle', phase: 'Engraissement', parcelle: 'Parcelle Beta', etatSante: 'Sain', poidsActuel: 410, gmqActuel: 0.74, coutCumule: 8920 },
-    { identifiant: 'ANI-003', race: 'Limousin', sexe: 'Mâle', phase: 'Finition', parcelle: 'Parcelle Alpha', etatSante: 'Malade', poidsActuel: 510, gmqActuel: 0.65, coutCumule: 15780 },
-    { identifiant: 'ANI-012', race: 'Holstein', sexe: 'Mâle', phase: 'Engraissement', parcelle: 'Parcelle Beta', etatSante: 'En traitement', poidsActuel: 380, gmqActuel: 0.88, coutCumule: 10200 },
-    { identifiant: 'ANI-019', race: 'Charolais', sexe: 'Mâle', phase: 'Finition', parcelle: 'Parcelle Beta', etatSante: 'Sain', poidsActuel: 495, gmqActuel: 1.41, coutCumule: 18200 },
-    { identifiant: 'ANI-022', race: 'Angus', sexe: 'Femelle', phase: 'Finition', parcelle: 'Parcelle Alpha', etatSante: 'Sain', poidsActuel: 482, gmqActuel: 1.2, coutCumule: 12900 },
-    { identifiant: 'ANI-031', race: 'Angus', sexe: 'Mâle', phase: 'Engraissement', parcelle: 'Parcelle Gamma', etatSante: 'En traitement', poidsActuel: 360, gmqActuel: 0.79, coutCumule: 9100 },
-    { identifiant: 'ANI-047', race: 'Limousin', sexe: 'Mâle', phase: 'Croissance', parcelle: 'Parcelle Gamma', etatSante: 'Malade', poidsActuel: 290, gmqActuel: 0.78, coutCumule: 7800 },
+    { identifiant: 'ANI-001', race: 'Holstein', sexe: 'Mâle', phase: 'Croissance', parcelle: 'Parcelle Alpha', etatSante: 'Sain', poidsActuel: 320, gmqActuel: 0.82, coutCumule: 12450, origine: 'ferme', dateEntree: '2026-06-10' },
+    { identifiant: 'ANI-002', race: 'Angus', sexe: 'Femelle', phase: 'Engraissement', parcelle: 'Parcelle Beta', etatSante: 'Sain', poidsActuel: 410, gmqActuel: 0.74, coutCumule: 8920, origine: 'achat', dateEntree: '2026-06-05' },
+    { identifiant: 'ANI-003', race: 'Limousin', sexe: 'Mâle', phase: 'Finition', parcelle: 'Parcelle Alpha', etatSante: 'Malade', poidsActuel: 510, gmqActuel: 0.65, coutCumule: 15780, origine: 'achat', dateEntree: '2025-12-15' },
+    { identifiant: 'ANI-012', race: 'Holstein', sexe: 'Mâle', phase: 'Engraissement', parcelle: 'Parcelle Beta', etatSante: 'En traitement', poidsActuel: 380, gmqActuel: 0.88, coutCumule: 10200, origine: 'ferme', dateEntree: '2026-06-20' },
+    { identifiant: 'ANI-019', race: 'Charolais', sexe: 'Mâle', phase: 'Finition', parcelle: 'Parcelle Beta', etatSante: 'Sain', poidsActuel: 495, gmqActuel: 1.41, coutCumule: 18200, origine: 'achat', dateEntree: '2026-01-10' },
+    { identifiant: 'ANI-022', race: 'Angus', sexe: 'Femelle', phase: 'Finition', parcelle: 'Parcelle Alpha', etatSante: 'Sain', poidsActuel: 482, gmqActuel: 1.2, coutCumule: 12900, origine: 'achat', dateEntree: '2026-02-01' },
+    { identifiant: 'ANI-031', race: 'Angus', sexe: 'Mâle', phase: 'Engraissement', parcelle: 'Parcelle Gamma', etatSante: 'En traitement', poidsActuel: 360, gmqActuel: 0.79, coutCumule: 9100, origine: 'ferme', dateEntree: '2026-06-18' },
+    { identifiant: 'ANI-047', race: 'Limousin', sexe: 'Mâle', phase: 'Croissance', parcelle: 'Parcelle Gamma', etatSante: 'Malade', poidsActuel: 290, gmqActuel: 0.78, coutCumule: 7800, origine: 'ferme', dateEntree: '2026-06-22' },
+
+    // ── Veaux (calves) — phase 'Veau', housed on Parcelle Gamma ──
+    { identifiant: 'ANI-051', race: 'Holstein', sexe: 'Mâle', phase: 'Veau', parcelle: 'Parcelle Gamma', etatSante: 'Sain', poidsActuel: 95, gmqActuel: 0.7, coutCumule: 2100, origine: 'ferme', dateEntree: '2026-06-15' },
+    { identifiant: 'ANI-052', race: 'Angus', sexe: 'Femelle', phase: 'Veau', parcelle: 'Parcelle Gamma', etatSante: 'Sain', poidsActuel: 110, gmqActuel: 0.75, coutCumule: 2450, origine: 'ferme', dateEntree: '2026-06-12' },
+    { identifiant: 'ANI-053', race: 'Limousin', sexe: 'Mâle', phase: 'Veau', parcelle: 'Parcelle Gamma', etatSante: 'Sain', poidsActuel: 88, gmqActuel: 0.68, coutCumule: 1980, origine: 'ferme', dateEntree: '2026-06-20' },
+    { identifiant: 'ANI-054', race: 'Charolais', sexe: 'Femelle', phase: 'Veau', parcelle: 'Parcelle Gamma', etatSante: 'Sain', poidsActuel: 130, gmqActuel: 0.8, coutCumule: 2800, origine: 'achat', dateEntree: '2026-05-30' },
+    { identifiant: 'ANI-055', race: 'Holstein', sexe: 'Femelle', phase: 'Veau', parcelle: 'Parcelle Gamma', etatSante: 'Sain', poidsActuel: 102, gmqActuel: 0.72, coutCumule: 2240, origine: 'ferme', dateEntree: '2026-06-08' },
+    { identifiant: 'ANI-056', race: 'Angus', sexe: 'Mâle', phase: 'Veau', parcelle: 'Parcelle Gamma', etatSante: 'En traitement', poidsActuel: 78, gmqActuel: 0.6, coutCumule: 1650, origine: 'ferme', dateEntree: '2026-06-23' },
+
+    // ── Additional growing / fattening / finishing stock ──
+    { identifiant: 'ANI-061', race: 'Charolais', sexe: 'Mâle', phase: 'Croissance', parcelle: 'Parcelle Alpha', etatSante: 'Sain', poidsActuel: 280, gmqActuel: 0.95, coutCumule: 6400, origine: 'ferme', dateEntree: '2026-05-20' },
+    { identifiant: 'ANI-062', race: 'Holstein', sexe: 'Femelle', phase: 'Croissance', parcelle: 'Parcelle Alpha', etatSante: 'Sain', poidsActuel: 305, gmqActuel: 0.85, coutCumule: 7200, origine: 'ferme', dateEntree: '2026-04-15' },
+    { identifiant: 'ANI-063', race: 'Limousin', sexe: 'Mâle', phase: 'Engraissement', parcelle: 'Parcelle Beta', etatSante: 'Sain', poidsActuel: 425, gmqActuel: 1.1, coutCumule: 11300, origine: 'achat', dateEntree: '2026-03-10' },
+    { identifiant: 'ANI-064', race: 'Charolais', sexe: 'Mâle', phase: 'Engraissement', parcelle: 'Parcelle Beta', etatSante: 'Sain', poidsActuel: 460, gmqActuel: 1.25, coutCumule: 13750, origine: 'achat', dateEntree: '2026-02-20' },
+    { identifiant: 'ANI-065', race: 'Angus', sexe: 'Femelle', phase: 'Finition', parcelle: 'Parcelle Alpha', etatSante: 'Sain', poidsActuel: 470, gmqActuel: 1.15, coutCumule: 14100, origine: 'achat', dateEntree: '2025-11-05' },
+    { identifiant: 'ANI-066', race: 'Limousin', sexe: 'Mâle', phase: 'Finition', parcelle: 'Parcelle Beta', etatSante: 'Sain', poidsActuel: 505, gmqActuel: 1.3, coutCumule: 16900, origine: 'achat', dateEntree: '2025-10-20' },
+    { identifiant: 'ANI-067', race: 'Angus', sexe: 'Mâle', phase: 'Croissance', parcelle: 'Parcelle Gamma', etatSante: 'Sain', poidsActuel: 250, gmqActuel: 0.9, coutCumule: 5600, origine: 'ferme', dateEntree: '2026-06-01' },
+    { identifiant: 'ANI-068', race: 'Holstein', sexe: 'Mâle', phase: 'Engraissement', parcelle: 'Parcelle Beta', etatSante: 'Sain', poidsActuel: 390, gmqActuel: 1.0, coutCumule: 9800, origine: 'achat', dateEntree: '2026-06-25' },
   ];
   const animals = await Animal.create(
     animalsData.map((a) => ({
       identifiant: a.identifiant,
       race: raceByName[a.race]._id,
       sexe: a.sexe,
-      origine: 'ferme',
+      origine: a.origine || 'ferme',
       phase: a.phase,
       poidsEntree: Math.round(a.poidsActuel * 0.4),
       poidsActuel: a.poidsActuel,
-      dateEntree: new Date('2025-09-01'),
+      dateEntree: new Date(`${a.dateEntree}T00:00:00.000Z`),
       parcelle: parcelleByName[a.parcelle]._id,
       etatSante: a.etatSante,
       gmqActuel: a.gmqActuel,
@@ -152,6 +173,13 @@ async function run() {
     { animal: animalByCode['ANI-012']._id, type: 'Antibiotique', produit: 'Amoxicilline', article: artByName['Amoxicilline']._id, dose: 2, doseUnite: 'ml', voie: 'injection-im', dateDebut: new Date('2026-06-01'), dateFin: new Date('2026-06-07'), veterinaire: 'Dr. Ouali', delaiRetrait: 5, statut: 'En cours' },
     { animal: animalByCode['ANI-031']._id, type: 'Antiparasitaire', produit: 'Ivermectine', article: artByName['Ivermectine']._id, dose: 1, doseUnite: 'dose', voie: 'injection-sc', dateDebut: new Date('2026-05-28'), dateFin: new Date('2026-06-01'), veterinaire: 'Dr. Ouali', delaiRetrait: 0, statut: 'Terminé' },
     { animal: animalByCode['ANI-047']._id, type: 'Anti-inflammatoire', produit: 'Méloxicam', dose: 3, doseUnite: 'ml', voie: 'injection-iv', dateDebut: new Date('2026-06-02'), veterinaire: 'Dr. Ouali', delaiRetrait: 3, statut: 'En cours' },
+    { animal: animalByCode['ANI-056']._id, type: 'Antibiotique', produit: 'Pénicilline', dose: 2, doseUnite: 'ml', voie: 'injection-im', dateDebut: new Date('2026-06-24'), dateFin: new Date('2026-06-29'), veterinaire: 'Dr. Ouali', delaiRetrait: 7, statut: 'En cours' },
+    { animal: animalByCode['ANI-051']._id, type: 'Vaccin', produit: 'Vaccin IBR', dose: 1, doseUnite: 'dose', voie: 'injection-sc', dateDebut: new Date('2026-06-16'), veterinaire: 'Dr. Ouali', delaiRetrait: 0, statut: 'Terminé' },
+    { animal: animalByCode['ANI-052']._id, type: 'Vaccin', produit: 'Vaccin IBR', dose: 1, doseUnite: 'dose', voie: 'injection-sc', dateDebut: new Date('2026-06-16'), veterinaire: 'Dr. Ouali', delaiRetrait: 0, statut: 'Terminé' },
+    { animal: animalByCode['ANI-067']._id, type: 'Antiparasitaire', produit: 'Ivermectine', article: artByName['Ivermectine']._id, dose: 1, doseUnite: 'dose', voie: 'injection-sc', dateDebut: new Date('2026-06-10'), dateFin: new Date('2026-06-12'), veterinaire: 'Dr. Ouali', delaiRetrait: 0, statut: 'Terminé' },
+    { animal: animalByCode['ANI-068']._id, type: 'Antiparasitaire', produit: 'Ivermectine', article: artByName['Ivermectine']._id, dose: 1, doseUnite: 'dose', voie: 'injection-sc', dateDebut: new Date('2026-06-26'), veterinaire: 'Dr. Ouali', delaiRetrait: 0, statut: 'En cours' },
+    { animal: animalByCode['ANI-002']._id, type: 'Anti-inflammatoire', produit: 'Méloxicam', dose: 4, doseUnite: 'ml', voie: 'injection-iv', dateDebut: new Date('2026-06-08'), dateFin: new Date('2026-06-11'), veterinaire: 'Dr. Ouali', delaiRetrait: 3, statut: 'Terminé' },
+    { animal: animalByCode['ANI-063']._id, type: 'Vaccin', produit: 'FMD Vaccine', dose: 1, doseUnite: 'dose', voie: 'injection-sc', dateDebut: new Date('2026-05-29'), veterinaire: 'Dr. Ouali', delaiRetrait: 0, statut: 'Terminé' },
   ]);
 
   // ── États de santé ──
@@ -175,6 +203,11 @@ async function run() {
   await Distribution.create([
     { ration: rationByName['Ration Bovins Adultes']._id, cible: 'Parcelle Alpha', date: new Date('2026-06-02'), quantite: 624, nbAnimaux: 78, coutEstime: 1435 },
     { ration: rationByName['Ration Veaux']._id, cible: 'Parcelle Gamma', date: new Date('2026-06-01'), quantite: 290, nbAnimaux: 58, coutEstime: 742 },
+    { ration: rationByName['Ration Bovins Adultes']._id, cible: 'Parcelle Beta', date: new Date('2026-06-09'), quantite: 540, nbAnimaux: 72, coutEstime: 1280 },
+    { ration: rationByName['Ration Finition']._id, cible: 'LOT-B', date: new Date('2026-06-12'), quantite: 380, nbAnimaux: 42, coutEstime: 1120 },
+    { ration: rationByName['Ration Veaux']._id, cible: 'Parcelle Gamma', date: new Date('2026-06-18'), quantite: 165, nbAnimaux: 33, coutEstime: 430 },
+    { ration: rationByName['Ration Bovins Adultes']._id, cible: 'Parcelle Alpha', date: new Date('2026-06-23'), quantite: 600, nbAnimaux: 75, coutEstime: 1390 },
+    { ration: rationByName['Ration Finition']._id, cible: 'LOT-B', date: new Date('2026-06-26'), quantite: 395, nbAnimaux: 44, coutEstime: 1175 },
   ]);
 
   // ── Alertes ──

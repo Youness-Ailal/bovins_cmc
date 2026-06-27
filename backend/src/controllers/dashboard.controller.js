@@ -119,7 +119,21 @@ exports.rentabilite = asyncHandler(async (req, res) => {
 
   const animaux = await Animal.find(dateFilter('dateEntree', range));
   const achat = Math.round(animaux.reduce((s, a) => s + (a.poidsEntree || 0) * 30, 0));
-  const veterinaire = Math.round(animaux.length * 56); // placeholder per-head vet cost
+
+  // Vet cost is derived from treatments started within the period, with an
+  // estimated cost per treatment type (MAD), so it reflects real vet activity
+  // rather than a flat per-head charge tied to entry dates.
+  const VET_COST_BY_TYPE = {
+    Antibiotique: 220,
+    Antiparasitaire: 90,
+    'Anti-inflammatoire': 150,
+    Vaccin: 60,
+    Autre: 80,
+  };
+  const traitements = await Traitement.find(dateFilter('dateDebut', range));
+  const veterinaire = Math.round(
+    traitements.reduce((s, t) => s + (VET_COST_BY_TYPE[t.type] ?? VET_COST_BY_TYPE.Autre), 0)
+  );
 
   res.json({
     success: true,

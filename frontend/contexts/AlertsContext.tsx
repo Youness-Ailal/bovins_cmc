@@ -1,20 +1,29 @@
 "use client";
 
 import { createContext, useContext, useCallback } from "react";
-import { useAlerts } from "@/hooks/useAlerts";
+import { useAlerts, type Notification } from "@/hooks/useAlerts";
 import { useToast } from "@/components/ui/Toast";
-import { usePathname } from "next/navigation";
 
 interface AlertsContextValue {
+  notifications: Notification[];
   unreadCount: number;
-  resetUnread: () => void;
+  markRead: (id: string) => void;
+  markAllRead: () => void;
+  remove: (id: string) => void;
+  clearAll: () => void;
 }
 
-const AlertsContext = createContext<AlertsContextValue>({ unreadCount: 0, resetUnread: () => {} });
+const AlertsContext = createContext<AlertsContextValue>({
+  notifications: [],
+  unreadCount: 0,
+  markRead: () => {},
+  markAllRead: () => {},
+  remove: () => {},
+  clearAll: () => {},
+});
 
 export function AlertsProvider({ children }: { children: React.ReactNode }) {
   const { info } = useToast();
-  const pathname = usePathname();
 
   const handleAlert = useCallback(
     (payload: { message: string }) => {
@@ -23,13 +32,10 @@ export function AlertsProvider({ children }: { children: React.ReactNode }) {
     [info]
   );
 
-  const { unreadCount, resetUnread } = useAlerts(handleAlert);
-
-  // Auto-reset badge when the user is on the Alertes page
-  const effectiveCount = pathname.startsWith("/performance") ? 0 : unreadCount;
+  const { notifications, unreadCount, markRead, markAllRead, remove, clearAll } = useAlerts(handleAlert);
 
   return (
-    <AlertsContext.Provider value={{ unreadCount: effectiveCount, resetUnread }}>
+    <AlertsContext.Provider value={{ notifications, unreadCount, markRead, markAllRead, remove, clearAll }}>
       {children}
     </AlertsContext.Provider>
   );

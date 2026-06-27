@@ -10,6 +10,7 @@ import { useAuth } from "@/lib/auth";
 import type { DashboardSummary, Animal, Traitement } from "@/lib/types";
 import TroupeauBarChart from "@/components/dashboard/TroupeauBarChart";
 import CoutsDonutChart from "@/components/dashboard/CoutsDonutChart";
+import NotificationBell from "@/components/dashboard/NotificationBell";
 
 interface Rentabilite { alimentation: number; veterinaire: number; achat: number; total: number; }
 type Period = "7" | "30" | "90" | "year" | "custom";
@@ -93,9 +94,7 @@ export default function DashboardPage() {
                 ))}
               </select>
             </div>
-            <Link href="/performance" className="flex h-[38px] w-[38px] items-center justify-center rounded-[6px] border border-border bg-card hover:bg-surface transition-colors">
-              <Icon name="bell" size={18} className="text-subtle" />
-            </Link>
+            <NotificationBell />
             <div className="flex h-[38px] w-[38px] items-center justify-center rounded-full bg-primary">
               <span className="font-dm-sans text-[14px] font-semibold text-white">{initials}</span>
             </div>
