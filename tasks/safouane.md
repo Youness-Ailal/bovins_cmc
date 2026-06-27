@@ -1,37 +1,45 @@
 # Safouane — Animaux & Parcelles
 
-**Ma partie :** le cœur du troupeau — la vie d'un animal de l'entrée à la sortie,
-et les parcelles où ils vivent.
+**Ma partie :** suivi du troupeau, cycle de vie des animaux et gestion des parcelles.
 
-🔗 App : https://bovitrack.netlify.app
+## Pages à présenter
 
-## Pages que je présente
+- `/animaux` — liste, filtres, statut sanitaire
+- `/animaux/nouveau` — création animal
+- `/animaux/[id]` — fiche animal, pesées, santé, finances, PDF
+- `/animaux/[id]/pesee/nouveau` — nouvelle pesée
+- `/animaux/[id]/sortie` — vente, abattage ou mortalité
+- `/animaux/prets-a-vendre` — animaux prêts à vendre
+- `/parcelles` — occupation, capacité, recherche
+- `/parcelles/nouvelle` — création parcelle
+- `/parcelles/transfert` — transfert animal vers une parcelle
 
-| Page | Lien | Ce que je montre |
-|---|---|---|
-| Liste animaux | https://bovitrack.netlify.app/animaux | Tableau, filtres, statuts |
-| Nouvel animal | https://bovitrack.netlify.app/animaux/nouveau | Formulaire de création |
-| Fiche animal | https://bovitrack.netlify.app/animaux | Ouvrir une fiche : infos, pesées, QR code |
-| Modifier | (depuis la fiche) | Édition d'un animal |
-| Nouvelle pesée | (depuis la fiche) | Saisir un poids → calcul GMQ |
-| Sortie animal | (depuis la fiche) | Vente / abattage / mort |
-| Prêts à vendre | https://bovitrack.netlify.app/animaux/prets-a-vendre | Animaux prêts pour la vente |
-| Parcelles | https://bovitrack.netlify.app/parcelles | Liste, capacité, occupation |
-| Nouvelle parcelle | https://bovitrack.netlify.app/parcelles/nouvelle | Création |
-| Transfert | https://bovitrack.netlify.app/parcelles/transfert | Déplacer des animaux entre parcelles |
+## Code frontend à citer
 
-## Code derrière (backend)
-- `controllers/animal.controller.js` — CRUD, pesées, phase, santé, sortie
-- `controllers/parcelle.controller.js` — parcelles + transferts
-- `utils/calculations.js` — calcul **GMQ** et **IC**
-- `utils/pdfGenerator.js` — passeport animal + carte **QR code**
+- `app/(dashboard)/animaux`
+- `app/(dashboard)/parcelles`
+- `components/forms/AnimalForm.tsx`
+- `components/ui/ProgressBar.tsx`
+- `components/ui/Badge.tsx`
 
-## Ce que je dois dire (points clés)
-1. Le **cycle de vie** complet : entrée → pesées → phase (Veau → Croissance →
-   Engraissement → Finition) → sortie/vente.
-2. Les calculs zootechniques : **GMQ** (gain moyen quotidien) et **IC** (indice de consommation).
-3. La génération **PDF** (passeport) et le **QR code** par animal.
-4. Le **transfert** entre parcelles tient compte de la capacité.
+## Code backend à citer
 
-## Ordre de démo
-Liste animaux → ouvrir une fiche (pesées + QR) → ajouter une pesée → Parcelles → Transfert.
+- `controllers/animal.controller.js`
+- `controllers/parcelle.controller.js`
+- `models/Animal.js`
+- `models/Parcelle.js`
+- `models/Pesee.js`
+- `utils/calculations.js`
+- `utils/pdfGenerator.js`
+
+## Points simples à dire
+
+1. L'animal suit un cycle : entrée → pesées → phase → sortie.
+2. Les pesées calculent le **GMQ**.
+3. Les phases sont : Veau, Croissance, Engraissement, Finition.
+4. La fiche animal génère des documents PDF et QR code.
+5. Le transfert vérifie la capacité de la parcelle.
+
+## Démo rapide
+
+Liste animaux → fiche animal → ajouter pesée → parcelles → transfert.

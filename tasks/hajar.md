@@ -1,33 +1,41 @@
 # Hajar — Dashboard, Finances & Fournisseurs
 
-**Ma partie :** la vue décisionnelle — le tableau de bord, les finances (coûts,
-rentabilité) et les achats fournisseurs (qui génèrent les coûts).
+**Ma partie :** vision globale, coûts, rentabilité et achats fournisseurs.
 
-🔗 App : https://bovitrack.netlify.app
+## Pages à présenter
 
-## Pages que je présente
+- `/dashboard` — KPIs, graphiques, période
+- `/finances` — coûts, revenus, marges
+- `/finances/animal/[id]` — rentabilité par animal
+- `/fournisseurs` — liste fournisseurs
+- `/fournisseurs/nouveau` — création fournisseur
+- `/fournisseurs/commandes` — commandes d'achat
+- `/fournisseurs/commandes/nouvelle` — nouvelle commande
 
-| Page | Lien | Ce que je montre |
-|---|---|---|
-| Tableau de bord | https://bovitrack.netlify.app/dashboard | KPIs, graphiques troupeau & coûts, filtre période |
-| Finances | https://bovitrack.netlify.app/finances | Coûts, revenus, marges |
-| Rentabilité animal | https://bovitrack.netlify.app/finances | Ouvrir un animal : coût vs valeur |
-| Fournisseurs | https://bovitrack.netlify.app/fournisseurs | Liste des fournisseurs |
-| Nouveau fournisseur | https://bovitrack.netlify.app/fournisseurs/nouveau | Création |
-| Commandes d'achat | https://bovitrack.netlify.app/fournisseurs/commandes | Liste des commandes |
-| Nouvelle commande | https://bovitrack.netlify.app/fournisseurs/commandes/nouvelle | Créer une commande |
+## Code frontend à citer
 
-## Code derrière (backend)
-- `controllers/dashboard.controller.js` — KPIs + rentabilité (coûts filtrés par période)
-- `controllers/finances.controller.js` — coûts, revenus, marges
-- `controllers/fournisseur.controller.js` — fournisseurs + commandes d'achat
-- Graphiques : `TroupeauBarChart`, `CoutsDonutChart`
+- `app/(dashboard)/dashboard`
+- `app/(dashboard)/finances`
+- `app/(dashboard)/fournisseurs`
+- `components/dashboard/TroupeauBarChart.tsx`
+- `components/dashboard/CoutsDonutChart.tsx`
 
-## Ce que je dois dire (points clés)
-1. Le **tableau de bord** : KPIs + graphiques (répartition du troupeau, coûts par période).
-2. Les **coûts filtrés par période** (alimentation / vétérinaire / achat) et la
-   **rentabilité par animal** (coût cumulé vs valeur, marge).
-3. Les **commandes fournisseurs** sont la source des coûts d'achat (lien achats → finances).
+## Code backend à citer
 
-## Ordre de démo
-Dashboard (changer la période) → Finances → rentabilité d'un animal → Fournisseurs → une commande.
+- `controllers/dashboard.controller.js`
+- `controllers/finances.controller.js`
+- `controllers/fournisseur.controller.js`
+- `models/Fournisseur.js`
+- `models/CommandeAchat.js`
+
+## Points simples à dire
+
+1. Le dashboard donne une vue rapide de la ferme.
+2. Les graphiques montrent la répartition du troupeau et les coûts.
+3. Les finances calculent les coûts, revenus, marges et rentabilité.
+4. Les fournisseurs et commandes alimentent les coûts d'achat.
+5. On peut analyser la rentabilité d'un animal.
+
+## Démo rapide
+
+Dashboard → changer période → finances → rentabilité animal → fournisseurs → commande.

@@ -1,34 +1,44 @@
 # Youness — Stocks & Rations
 
-**Ma partie :** la gestion des stocks (aliments, médicaments) et les rations
-distribuées au troupeau. Logique : stock → ration → distribution → consommation.
+**Ma partie :** gestion du stock, composition des rations et distribution aux animaux.
 
-🔗 App : https://bovitrack.netlify.app
+## Pages à présenter
 
-## Pages que je présente
+- `/stocks` — liste des articles, seuils, alertes
+- `/stocks/nouveau` — création article
+- `/stocks/[id]` — fiche article
+- `/stocks/mouvement` — entrée, sortie, ajustement
+- `/stocks/historique` — historique des mouvements
+- `/rations` — liste des rations
+- `/rations/nouvelle` — composer une ration
+- `/rations/distribution` — distribuer une ration
+- `/rations/historique` — historique des distributions
 
-| Page | Lien | Ce que je montre |
-|---|---|---|
-| Liste stocks | https://bovitrack.netlify.app/stocks | Articles, quantités, seuils d'alerte |
-| Nouvel article | https://bovitrack.netlify.app/stocks/nouveau | Création d'un article |
-| Fiche article | https://bovitrack.netlify.app/stocks | Ouvrir une fiche + édition |
-| Mouvement de stock | https://bovitrack.netlify.app/stocks/mouvement | Entrée / sortie / ajustement |
-| Historique stock | https://bovitrack.netlify.app/stocks/historique | Tous les mouvements |
-| Liste rations | https://bovitrack.netlify.app/rations | Rations + ingrédients |
-| Nouvelle ration | https://bovitrack.netlify.app/rations/nouvelle | Composer une ration |
-| Distribution | https://bovitrack.netlify.app/rations/distribution | Distribuer à une parcelle/lot |
-| Historique rations | https://bovitrack.netlify.app/rations/historique | Distributions passées |
+## Code frontend à citer
 
-## Code derrière (backend)
-- `controllers/stock.controller.js` — articles + mouvements de stock
-- `controllers/ration.controller.js` — rations + distributions
-- Modèles : `StockArticle`, `StockMouvement`, `Ration`, `Distribution`
+- `app/(dashboard)/stocks`
+- `app/(dashboard)/rations`
+- `components/ui/DataTable.tsx`
+- `components/ui/ProgressBar.tsx`
+- `lib/exportCsv.ts`
 
-## Ce que je dois dire (points clés)
-1. Le lien **ration → distribution → consommation de stock** (les quantités baissent).
-2. Les **seuils d'alerte** : quand un article passe sous son seuil, une alerte est
-   déclenchée (reprise par la partie de Mohamed en temps réel).
-3. Le **coût estimé** d'une distribution alimente les coûts d'alimentation du dashboard.
+## Code backend à citer
 
-## Ordre de démo
-Liste stocks (montrer un seuil bas) → Mouvement de stock → Rations → Distribution → Historique.
+- `controllers/stock.controller.js`
+- `controllers/ration.controller.js`
+- `models/StockArticle.js`
+- `models/StockMouvement.js`
+- `models/Ration.js`
+- `models/Distribution.js`
+
+## Points simples à dire
+
+1. Un article de stock a une quantité, un seuil et un prix.
+2. Les mouvements modifient la quantité : entrée, sortie, ajustement.
+3. Si le stock passe sous le seuil, une alerte est créée.
+4. Une ration est composée d'ingrédients.
+5. La distribution consomme le stock et calcule un coût estimé.
+
+## Démo rapide
+
+Stocks → mouvement → rations → distribution → historique.

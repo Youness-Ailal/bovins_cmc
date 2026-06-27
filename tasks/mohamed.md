@@ -1,39 +1,45 @@
-# Mohamed — Santé, Centre des alertes & BoviAI
+# Mohamed — Santé, Alertes & BoviAI
 
-**Ma partie :** le suivi sanitaire, les alertes en temps réel, et l'assistant IA.
-C'est la partie « waouh » : je termine la démo.
+**Ma partie :** santé du troupeau, traitements, alertes et assistant IA.
 
-🔗 App : https://bovitrack.netlify.app
+## Pages à présenter
 
-## Pages que je présente
+- `/sante` — traitements et registre
+- `/sante/etat` — état sanitaire du troupeau
+- `/sante/etat/nouveau` — enregistrer un état
+- `/sante/traitement/nouveau` — nouveau traitement
+- `/sante/planification` — plans de traitement
+- `/sante/calendrier` — calendrier sanitaire
+- `/performance` — centre des alertes
+- `/boviai` — assistant IA
+- Cloche notifications — alertes temps réel
 
-| Page | Lien | Ce que je montre |
-|---|---|---|
-| Santé | https://bovitrack.netlify.app/sante | Vue d'ensemble santé |
-| États de santé | https://bovitrack.netlify.app/sante/etat | Liste + saisie d'un état |
-| Nouveau traitement | https://bovitrack.netlify.app/sante/traitement/nouveau | Traitement + délai de retrait |
-| Planification | https://bovitrack.netlify.app/sante/planification | Plans de traitement |
-| Calendrier | https://bovitrack.netlify.app/sante/calendrier | Calendrier sanitaire |
-| Centre des alertes | https://bovitrack.netlify.app/performance | Alertes : traiter / ignorer / exporter |
-| BoviAI | https://bovitrack.netlify.app/boviai | Assistant IA (poser une question sur la ferme) |
-| Cloche 🔔 | (en haut du dashboard) | Notifications en temps réel |
+## Code frontend à citer
 
-> Remarque : la route `/performance` est mal nommée — c'est le **Centre des alertes**.
+- `app/(dashboard)/sante`
+- `app/(dashboard)/performance`
+- `app/(dashboard)/boviai`
+- `hooks/useAlerts.ts`
+- `contexts/AlertsContext.tsx`
+- `components/dashboard/NotificationBell.tsx`
 
-## Code derrière (backend)
-- `controllers/sante.controller.js` — états de santé, traitements, plans
-- `controllers/alerte.controller.js` — liste / traiter / ignorer les alertes
-- `services/alertService.js` + `socket.js` — **alertes temps réel (Socket.io)**
-- `controllers/boviAI.controller.js` + `services/boviAITools.js` — **IA (function-calling Gemini)**
-- Côté écran : `hooks/useAlerts.ts`, `contexts/AlertsContext.tsx`, `NotificationBell`
+## Code backend à citer
 
-## Ce que je dois dire (points clés)
-1. Les **alertes en temps réel** (WebSocket / Socket.io) : santé, stock faible, fin de
-   délai de retrait → toast + cloche de notifications, sans rafraîchir la page.
-2. Le **délai de retrait** : un animal traité ne peut pas être vendu avant la fin du délai.
-3. **BoviAI** : l'IA interroge la vraie base via des outils (tools) et donne un conseil,
-   pas juste un chiffre.
+- `controllers/sante.controller.js`
+- `controllers/alerte.controller.js`
+- `controllers/boviAI.controller.js`
+- `services/alertService.js`
+- `services/boviAITools.js`
+- `socket.js`
 
-## Ordre de démo
-Page Santé → ajouter un traitement (délai de retrait) → Centre des alertes →
-poser une question à BoviAI → montrer la cloche qui se met à jour en direct.
+## Points simples à dire
+
+1. Les traitements suivent le produit, dose, dates et délai de retrait.
+2. Le délai de retrait bloque la vente avant la date autorisée.
+3. Les alertes sont affichées dans le centre des alertes.
+4. Socket.IO sert aux notifications temps réel.
+5. BoviAI utilise Gemini et interroge les vraies données via des tools.
+
+## Démo rapide
+
+Santé → nouveau traitement → alertes → BoviAI → cloche notifications.
