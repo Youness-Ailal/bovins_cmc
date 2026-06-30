@@ -58,6 +58,11 @@ Fournisseur
 - region: String
 - type: String
 
+CommandeAchat
+- id: Int
+- date: Date
+- montantTotal: Float
+
 User
 - id: Int
 - prenom: String
@@ -80,6 +85,10 @@ Chaque mouvement concerne un seul article.
 User 0..1 -------- 0..* StockMouvement
 Un utilisateur peut enregistrer plusieurs mouvements.
 Un mouvement peut avoir un utilisateur ou aucun.
+
+CommandeAchat 0..1 -------- 0..* StockMouvement
+Une commande peut generer plusieurs mouvements de stock.
+Un mouvement peut venir d'une commande ou non.
 
 Ration 1 -------- 0..* IngredientRation
 Une ration contient plusieurs ingredients.

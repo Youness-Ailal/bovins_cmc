@@ -51,7 +51,6 @@ export default function StocksPage() {
   }
 
   const list = articles ?? [];
-  const critiques = list.filter((a) => a.statut !== "OK");
   const filtered = list.filter((a) => {
     const matchSearch = a.designation.toLowerCase().includes(search.toLowerCase()) || a.categorie.toLowerCase().includes(search.toLowerCase());
     const matchCat = catFilter === "Tous" || a.categorie === catFilter;
@@ -140,41 +139,6 @@ export default function StocksPage() {
       </header>
 
       <div className="flex flex-1 flex-col gap-4 overflow-auto p-6">
-        {/* Low stock alert */}
-        {critiques.length > 0 && (
-          <div className="rounded-[10px] border border-warning/25 bg-warning/5 p-4">
-            <div className="mb-2 flex items-center gap-2">
-              <Icon name="triangle-alert" size={14} className="text-warning" />
-              <span className="font-dm-sans text-[13px] font-semibold text-warning">
-                {critiques.length} article{critiques.length > 1 ? "s" : ""} sous seuil
-              </span>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {critiques.map((a) => (
-                <Link
-                  key={a.id}
-                  href={`/stocks/${a.id}`}
-                  className={`flex items-center gap-1.5 rounded-full px-2.5 py-1 font-inter text-[11px] font-semibold transition-colors hover:opacity-80 ${
-                    a.statut === "Critique" ? "bg-danger/10 text-danger" : "bg-warning/10 text-warning"
-                  }`}
-                >
-                  <span className={`h-1.5 w-1.5 rounded-full ${a.statut === "Critique" ? "bg-danger" : "bg-warning"}`} />
-                  {a.designation} — {a.quantite} {a.unite}
-                  {a.fournisseur && (
-                    <Link
-                      href={`/fournisseurs/commandes/nouvelle?fournisseur=${a.fournisseur.id}&article=${a.id}`}
-                      onClick={(e) => e.stopPropagation()}
-                      className="ml-1 rounded-full bg-primary/10 px-1.5 py-0.5 text-primary hover:bg-primary/20"
-                    >
-                      Commander
-                    </Link>
-                  )}
-                </Link>
-              ))}
-            </div>
-          </div>
-        )}
-
         {/* Search + category filter */}
         <div className="flex flex-wrap items-center gap-3">
           <div className="flex items-center gap-1.5 rounded-[6px] border border-border-light bg-card px-3 py-1.5">

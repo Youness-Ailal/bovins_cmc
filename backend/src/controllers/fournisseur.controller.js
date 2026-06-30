@@ -84,6 +84,14 @@ exports.listCommandes = asyncHandler(async (req, res) => {
   });
 });
 
+exports.getCommande = asyncHandler(async (req, res) => {
+  const commande = await CommandeAchat.findById(req.params.id)
+    .populate('fournisseur', 'nom region type')
+    .populate('lignes.article', 'designation unite');
+  if (!commande) throw ApiError.notFound('Commande introuvable');
+  res.json({ success: true, data: commande });
+});
+
 // Creating a commande immediately restocks — no status workflow needed.
 exports.createCommande = asyncHandler(async (req, res) => {
   const { fournisseur, date, lignes, notes } = req.body;

@@ -34,13 +34,15 @@ async function run() {
 
   // ── Users ──
   console.log('Seeding users…');
-  await User.create([
+  const users = await User.create([
     { prenom: 'Youness', nom: 'Ailal', email: 'youness@bovitrack.ma', password: 'password123', role: 'Admin', statut: 'Actif' },
     { prenom: 'Salma', nom: 'Benali', email: 'salma@bovitrack.ma', password: 'password123', role: 'Responsable', statut: 'Actif' },
     { prenom: 'Mohamed', nom: 'Ouali', email: 'mohamed@bovitrack.ma', password: 'password123', role: 'Vétérinaire', statut: 'Actif' },
     { prenom: 'Hajar', nom: 'Idrissi', email: 'hajar@bovitrack.ma', password: 'password123', role: 'Responsable', statut: 'Actif' },
     { prenom: 'Safouane', nom: 'El Amrani', email: 'safouane@bovitrack.ma', password: 'password123', role: 'Responsable', statut: 'Actif' },
   ]);
+  const adminId = users[0]._id;
+  const responsableId = users[1]._id;
 
   // ── Races ──
   console.log('Seeding races…');
@@ -224,12 +226,12 @@ async function run() {
   // ── Mouvements de stock ──
   console.log('Seeding mouvements de stock…');
   await StockMouvement.create([
-    { article: artByName['Orge']._id, type: 'sortie', quantite: 80, quantiteApres: 120, date: new Date('2026-06-02'), motif: 'Distribution Parcelle Alpha' },
-    { article: artByName['Foin de luzerne']._id, type: 'entree', quantite: 500, quantiteApres: 850, date: new Date('2026-06-01'), prixUnitaire: 1.8, motif: 'Livraison fournisseur' },
-    { article: artByName['Tourteau de soja']._id, type: 'sortie', quantite: 55, quantiteApres: 45, date: new Date('2026-06-01'), motif: 'Distribution LOT-B' },
-    { article: artByName['Minéraux bovins']._id, type: 'ajustement', quantite: 30, quantiteApres: 30, date: new Date('2026-05-31'), motif: 'Correction inventaire' },
-    { article: artByName['Mélasse']._id, type: 'entree', quantite: 60, quantiteApres: 60, date: new Date('2026-05-30'), prixUnitaire: 3.5, motif: 'Livraison fournisseur' },
-    { article: artByName['Amoxicilline']._id, type: 'sortie', quantite: 2, quantiteApres: 24, date: new Date('2026-06-01'), motif: 'Traitement ANI-012' },
+    { article: artByName['Orge']._id, type: 'sortie', quantite: 80, quantiteApres: 120, date: new Date('2026-06-02'), motif: 'Distribution Parcelle Alpha', utilisateur: responsableId },
+    { article: artByName['Foin de luzerne']._id, type: 'entree', quantite: 500, quantiteApres: 850, date: new Date('2026-06-01'), prixUnitaire: 1.8, motif: 'Livraison fournisseur', utilisateur: adminId },
+    { article: artByName['Tourteau de soja']._id, type: 'sortie', quantite: 55, quantiteApres: 45, date: new Date('2026-06-01'), motif: 'Distribution LOT-B', utilisateur: responsableId },
+    { article: artByName['Minéraux bovins']._id, type: 'ajustement', quantite: 30, quantiteApres: 30, date: new Date('2026-05-31'), motif: 'Correction inventaire', utilisateur: adminId },
+    { article: artByName['Mélasse']._id, type: 'entree', quantite: 60, quantiteApres: 60, date: new Date('2026-05-30'), prixUnitaire: 3.5, motif: 'Livraison fournisseur', utilisateur: adminId },
+    { article: artByName['Amoxicilline']._id, type: 'sortie', quantite: 2, quantiteApres: 24, date: new Date('2026-06-01'), motif: 'Traitement ANI-012', utilisateur: responsableId },
   ]);
 
   // ── Paramètres + config alertes (UC-24) ──
